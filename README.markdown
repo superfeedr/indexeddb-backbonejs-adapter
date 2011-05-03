@@ -16,11 +16,13 @@ Both your Backbone model and collections need to point to a `database` and a `st
 The `storeName` is the name of the store used for the objects of this Model or Collection. You _should_ use the same `storeName` for the model and collections of that same model.
 
 The `database` is a JSON object that define the following :
+
  * `id` : and unique id for the database
  * `description` :  a description of the database [OPTIONAL]
  * `migrations` : an array of migration to be applied to the database to get the schema that your app needs.
 
 The migrations are JSON objects with the following :
+
  * `version` : the version of the database once the migration is applied.
  * `migrate` : a Javascript function that will be called by the driver to perform the migration. It is called with a `IDBDatabase` object, a `IDBVersionChangeRequest` object and a function that needs to be called when the migration is performed, so that the next migration can be executed.
 
@@ -40,10 +42,38 @@ The migrations are JSON objects with the following :
 				version: "1.1",
 				migrate: function(db, versionRequest, next) {
 					var store = versionRequest.transaction.objectStore("movies")
-					store.createIndex("titleIndex", "title", { unique: false});  // Adds an index on the movies titles
+					store.createIndex("titleIndex", "title", { unique: true});  // Adds an index on the movies titles
 					store.createIndex("formatIndex", "format", { unique: false}); // Adds an index on the movies formats
 					next();
 				}
 			}
 		]
 	}
+
+## Models
+
+Not much change to your usual models. The only significant change is that you can now fetch a given model with its id, or with a value for one of its index.
+
+For example, in your traditional backbone apps, you would do something like :
+
+	var movie = new Movie({id: "123"})
+	movie.fetch()
+	
+to fetch from the remote server the Movie with the id `123`. This is convenient when you know the id. With this adapter, you can do something like
+
+	var movie = new Movie({title: "Avatar"})
+	movie.fetch()
+
+Obviously, to perform this, you need to have and index on `title`, and a movie with "Avatar" as a title obviously. If the index is not unique, the database will only return the first one.
+
+## Collections
+
+
+
+
+
+
+
+
+
+
