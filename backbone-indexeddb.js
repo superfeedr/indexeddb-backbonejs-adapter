@@ -12,16 +12,20 @@ window.indexedDB      = window.webkitIndexedDB;
 window.IDBTransaction = window.webkitIDBTransaction;
 window.IDBKeyRange    = window.webkitIDBKeyRange;
 
-// Contact object
+// Driver object
 function Driver() {
 };
 
+// Driver Prototype
 Driver.prototype = {
+	
+	// Performs all the migrations to reach the right version of the database
 	migrate: function(db, migrations, version, options) {
 		console.log("Starting migrations from " + version)
 		this._migrate_next(db, migrations, version, options);
 	},
 	
+	// Performs the next migrations. This method is private and should probably not be called.
 	_migrate_next: function(db, migrations, version, options) {
 		that = this
 		var migration = migrations.shift()
