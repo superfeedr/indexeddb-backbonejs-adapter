@@ -44,6 +44,7 @@ The migrations are JSON objects with the following :
 					var store = versionRequest.transaction.objectStore("movies")
 					store.createIndex("titleIndex", "title", { unique: true});  // Adds an index on the movies titles
 					store.createIndex("formatIndex", "format", { unique: false}); // Adds an index on the movies formats
+					store.createIndex("genreIndex", "genre", { unique: false}); // Adds an index on the movies genres
 					next();
 				}
 			}
@@ -68,7 +69,51 @@ Obviously, to perform this, you need to have and index on `title`, and a movie w
 
 ## Collections
 
+I added a lot of fun things to the collections, that make use of the `options` param used in Backbone to take advantage of IndexedDB's features, namely indices and cursors and bounds.
 
+First, you can `limit` and `offset` the number of items that are being fetched by a collection.
+
+	var theater = new Theater() // Theater is a collection of movies
+	theater.fetch({
+		offset: 1,
+		limit: 3,
+		success: function() {
+			// The theater collection will be populated with at most 3 items, skipping the first one
+		}
+	});
+
+You can also *provide a range* applied to the id.
+	
+	var theater = new Theater() // Theater is a collection of movies
+	theater.fetch({
+		range: ["a", "b"],
+		success: function() {
+			// The theater collection will be populated with all the items with an id comprised between "a" and "b" ("alphonse" is between "a" and "b")
+		}
+	});
+
+You can also get all items with a given value for a a specific value of an index. We use the `conditions` keyword.
+
+	var theater = new Theater() // Theater is a collection of movies
+	theater.fetch({
+		conditions: {genre: "adventure"},
+		success: function() {
+			// The theater collection will be populated with all the movies whose genre is "adventure"
+		}
+	});
+
+You can also get all items for which an indexed value is comprised between 2 values.
+
+	var theater = new Theater() // Theater is a collection of movies
+	theater.fetch({
+		conditions: {genre: ["a", "e"]},
+		success: function() {
+			// The theater collection will be populated with all the movies whose genre is "adventure", "comic", "drama", but not "thriller". 
+		}
+	});
+
+
+You can also obviously combine all these.
 
 
 
