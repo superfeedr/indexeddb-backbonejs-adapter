@@ -1,0 +1,452 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" 
+    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <link rel="stylesheet" href="http://code.jquery.com/qunit/git/qunit.css" type="text/css" media="screen" />
+    <script type="text/javascript" src="http://code.jquery.com/qunit/git/qunit.js"></script>
+
+    <!-- Dependencies -->
+    <script src="http://documentcloud.github.com/underscore/underscore-min.js" type="text/javascript"></script> 
+    <script src="https://github.com/documentcloud/backbone/raw/0.4.0/backbone.js" type="text/javascript"></script> 
+    <script src="../backbone-indexeddb.js" type="text/javascript"></script> 
+
+    <script>
+
+
+	var database = {
+		id: "movies-database",
+		description: "The database for the Movies",
+		migrations : [
+			{
+				version: "1.0",
+				migrate: function(db, versionRequest, next) {
+					var store = db.createObjectStore("movies");
+					next();
+				}
+			}, {
+				version: "1.1",
+				migrate: function(db, versionRequest, next) {
+					var store = versionRequest.transaction.objectStore("movies")
+					store.createIndex("titleIndex", "title", { unique: false}); 
+					store.createIndex("formatIndex", "format", { unique: false}); 
+					next();
+				}
+			}
+		]
+	}
+
+	var Movie = Backbone.Model.extend({
+		database: database,
+		storeName: "movies",
+	});
+
+	var Theater = Backbone.Collection.extend({
+		database: database,
+		storeName: "movies",
+		model: Movie
+	})
+
+	tests = [
+		["create model", function() {
+			var movie = new Movie()
+			movie.save({
+				title: "The Matrix",
+				format: "dvd"
+			}, {
+				success: function() {
+					start();  
+					equals(true, true, "The movie should be saved successfully")
+					nextTest()
+				},
+				error: function(o, error) {
+					start();  
+					console.log(error)
+					equals(true, false, error.error.target.webkitErrorMessage)
+					nextTest()
+				}
+			})
+		}],
+		["read model with id", function() {
+			var movie = new Movie()
+			movie.save({
+				title: "Avatar",
+				format: "blue-ray"
+			}, {
+				success: function() {
+					// Ok, now we need to create a new movie object and retrieve it
+					var saved = new Movie({id: movie.id})
+					saved.fetch({
+						success: function(object) {
+							// success
+							start();  
+							equals(saved.toJSON().title, movie.toJSON().title, "The movie should have the right title")
+							equals(saved.toJSON().format, movie.toJSON().format, "The movie should have the right format")
+							equals(object.toJSON().title, movie.toJSON().title, "The movie should have the right title")
+							equals(object.toJSON().format, movie.toJSON().format, "The movie should have the right format")
+							nextTest();
+						}, 
+						error: function(object, error) {
+							start();  
+							equals(true, false, error);
+							nextTest();
+							// Failure
+						}
+					});
+				},
+				error: function(o, error) {
+					start();  
+					equals(true, false, error.error.target.webkitErrorMessage)
+					nextTest();
+				}
+			});
+		}],
+		["read model with index", function() {
+			var movie = new Movie()
+			movie.save({
+				title: "Avatar",
+				format: "blue-ray"
+			}, {
+				success: function() {
+					// Ok, now we need to create a new movie object and retrieve it
+					var movie2 = new Movie({
+						apple: "orange",
+						title: "Avatar",
+						version: "three",
+						
+					})
+					movie2.fetch({
+						success: function(object) {
+							// success
+							start();  
+							equals(movie2.toJSON().title, movie.toJSON().title, "The movie should have the right title")
+							equals(movie2.toJSON().format, movie.toJSON().format, "The movie should have the right format")
+							nextTest();
+						}, 
+						error: function(object, error) {
+							start();  
+							equals(true, false, error);
+							nextTest();
+						}
+					});
+				},
+				error: function(o, error) {
+					start();  
+					equals(true, false, error.error.target.webkitErrorMessage)
+					nextTest();
+				}
+			});
+		}],
+		["update model", function() {
+			var movie = new Movie()
+			movie.save({
+				title: "Star Wars, Episode IV",
+				format: "dvd"
+			}, {
+				success: function() {
+					movie.save({title: "Star Wars, Episode V"}, {
+						success: function() {
+							movie.fetch({
+								success: function(object) {
+									// success
+									start();  
+									equals("Star Wars, Episode V", movie.toJSON().title, "The movie should have the right title");
+									equals("dvd", movie.toJSON().format, "The movie should have the right format");
+									nextTest();
+								}, 
+								error: function(object, error) {
+									start();  
+									equals(true, false, error);
+									nextTest();
+								}
+							});
+						},
+						error: function() {
+							start();  
+							equals(true, false, "Would not update");
+							nextTest();
+						}
+					})
+				},
+				error: function(object, error) {
+					start();  
+					equals(true, false, error.error.target.webkitErrorMessage);
+					nextTest();
+				}
+			});
+		}],
+		["delete model", function() {
+			var movie = new Movie()
+			movie.save({
+				title: "Avatar",
+				format: "blue-ray"
+			}, {
+				success: function(object) {
+					// success
+					movie.destroy({
+						success: function(object) {
+							// success
+							equals(true, true, "It should delete the object")
+							movie.fetch({
+								success: function() {
+									start()
+									equals(true, false, "Object was not deleted");
+									nextTest();
+								}, error: function(object, error) {
+									start()
+									equals(error, "Not Found", "Object was deleted");
+									nextTest();
+								}
+							});
+						},
+						error: function(object, error) {
+							// error
+							start();  
+							equals(true, false, error);
+							nextTest();
+						}
+					});
+				},
+				error: function(error) {
+					// error
+					start();  
+					equals(true, false, error.error.target.webkitErrorMessage);
+					nextTest();
+				}
+			});
+		}],
+		["read collection with no options", function() {
+			var theater = new Theater()
+			theater.fetch({
+				success: function() {
+					deleteNext(theater.models, function() {
+						addAllMovies(null, function() {
+							// Now all movies are inserted. Which is good.
+							theater.fetch({
+								success: function() {
+									start();  
+									equals(theater.models.length, 5, "Should have 5 elements");
+									nextTest();
+								}
+							});
+						});
+					});
+				},
+			});
+		}], 
+		["read collection with limit", function() {
+			var theaterToClean = new Theater()
+			theaterToClean.fetch({
+				success: function() {
+					deleteNext(theaterToClean.models, function() {
+						addAllMovies(null, function() {
+							// Now all movies are inserted. Which is good.
+							var theater = new Theater()
+							theater.fetch({
+								limit: 3,
+								success: function() {
+									start();  
+									equals(theater.models.length, 3, "Should have 3 elements");
+									deepEqual(theater.pluck("title"), ["Hello", "Bonjour", "Halo"], "Should have [\"Hello\", \"Bonjour\", \"Halo\"]");
+									nextTest();
+								}
+							});
+						});
+					});
+				},
+			});
+		}],
+		["read collection with offset", function() {
+			var theaterToClean = new Theater()
+			theaterToClean.fetch({
+				success: function() {
+					deleteNext(theaterToClean.models, function() {
+						addAllMovies(null, function() {
+							// Now all movies are inserted. Which is good.
+							var theater = new Theater()
+							theater.fetch({
+								offset: 2,
+								success: function() {
+									start();  
+									equals(theater.models.length, 3, "Should have 3 elements");
+									deepEqual(theater.pluck("title"), ["Halo", "Nihao", "Ciao"], "Should have [\"Halo\", \"Nihao\", \"Ciao\"]");
+									nextTest();
+								}
+							});
+						});
+					});
+				},
+			});
+		}],
+		["read collection with offset and limit", function() {
+			var theaterToClean = new Theater()
+			theaterToClean.fetch({
+				success: function() {
+					deleteNext(theaterToClean.models, function() {
+						addAllMovies(null, function() {
+							// Now all movies are inserted. Which is good.
+							var theater = new Theater()
+							theater.fetch({
+								offset: 1,
+								limit: 2,
+								success: function() {
+									start();  
+									equals(theater.models.length, 2, "Should have 2 elements");
+									deepEqual(theater.pluck("title"), ["Bonjour", "Halo"], "Should have [\"Bonjour\", \"Halo\"]");
+									nextTest();
+								}
+							});
+						});
+					});
+				},
+			});
+		}],
+		["read collection with range", function() {
+			var theaterToClean = new Theater()
+			theaterToClean.fetch({
+				success: function() {
+					deleteNext(theaterToClean.models, function() {
+						addAllMovies(null, function() {
+							// Now all movies are inserted. Which is good.
+							var theater = new Theater()
+							theater.fetch({
+								range: ["1.5", "4.5"],
+								success: function() {
+									start();  
+									equals(theater.models.length, 3, "Should have 3 elements");
+									deepEqual(theater.pluck("title"), ["Bonjour", "Halo", "Nihao"], "Should have [\"Bonjour\", \"Halo\", \"Nihao\"]");
+									nextTest();
+								}
+							});
+						});
+					});
+				},
+			});
+		}],
+		["read collection via condition on index with a single value", function() {
+			var theaterToClean = new Theater()
+			theaterToClean.fetch({
+				success: function() {
+					deleteNext(theaterToClean.models, function() {
+						addAllMovies(null, function() {
+							// Now all movies are inserted. Which is good.
+							var theater = new Theater()
+							theater.fetch({
+								conditions: {format: "dvd"},
+								success: function() {
+									start();  
+									equals(theater.models.length, 2, "Should have 2 elements");
+									deepEqual(theater.pluck("title"), ["Bonjour", "Ciao"], "Should have [\"Bonjour\", \"Ciao\"]");
+									nextTest();
+								}
+							});
+						});
+					});
+				},
+			});
+		}],
+		["read collection via condition on index with a range", function() {
+			var theaterToClean = new Theater()
+			theaterToClean.fetch({
+				success: function() {
+					deleteNext(theaterToClean.models, function() {
+						addAllMovies(null, function() {
+							// Now all movies are inserted. Which is good.
+							var theater = new Theater()
+							theater.fetch({
+								conditions: {format: ["a","f"]},
+								success: function() {
+									start();  
+									equals(theater.models.length, 4, "Should have 4 elements");
+									deepEqual(theater.pluck("title"), ["Hello", "Halo", "Bonjour", "Ciao"], "Should have [\"Hello\", \"Halo\", \"Bonjour\", \"Ciao\"]");
+									nextTest();
+								}
+							});
+						});
+					});
+				},
+			});
+		}]
+	]	
+		
+	function addAllMovies(movies, done) {
+		if(!movies) {
+			movies = [
+				{
+					title: "Hello",
+					format: "blueray",
+					id: "1"
+				}, {
+					title: "Bonjour",
+					format: "dvd",
+					id: "2"
+				}, {
+					title: "Halo",
+					format: "blueray",
+					id: "3"
+				}, {
+					title: "Nihao",
+					format: "streaming",
+					id: "4"
+				}, {
+					title: "Ciao",
+					format: "dvd",
+					id: "5"
+				}
+			]
+		}
+		var movie = movies.shift()
+		if( movie ) {
+			var m = new Movie()
+			m.save(movie, {
+				success: function() {
+					addAllMovies(movies, done)
+				},
+				error: function(o, error) {
+					start();  
+					equals(true, false, error.error.target.webkitErrorMessage)
+				}
+			})
+		}
+		else {
+			done();
+		}
+	}
+	
+	function deleteNext(movies, done) {
+		if(movies.length == 0){
+			done()
+		}
+		else {
+			m = movies[0];
+			m.destroy({
+				success: function() {
+					deleteNext(movies, done);
+				}
+			});
+		}
+	}
+	
+	// Let's go run the tests
+	function nextTest() {
+		t = tests.shift();
+		if(t) {
+			asyncTest(t[0], t[1]);
+		}
+	}
+	
+	nextTest(tests);
+
+
+	</script>
+
+</head>
+<body>
+    <h1 id="qunit-header">Inbox QUnit test</h1>
+    <h2 id="qunit-banner"></h2>
+    <div id="qunit-testrunner-toolbar"></div>
+    <h2 id="qunit-userAgent"></h2>
+    <ol id="qunit-tests"></ol>
+    <div id="log" style=""></div>
+</body>
+</html>
