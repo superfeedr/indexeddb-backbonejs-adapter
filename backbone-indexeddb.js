@@ -53,12 +53,6 @@ Driver.prototype = {
 	},
 	
 	/* This is the main method. */
-	/*
-	create → POST   /collection
-	read → GET   /collection[/id]
-	update → PUT   /collection/id
-	delete → DELETE   /collection/id
-	*/
 	execute: function(db, storeName, method, json, options) {
 		switch(method) {
 			case "create":
@@ -66,7 +60,7 @@ Driver.prototype = {
 				break;
 			case "read":
 				if(json instanceof Array ) {
-					this.query(db, storeName, json, options) // It's a collection
+					this.query(db, storeName, options) // It's a collection
 				} else {
 					this.read(db, storeName, json, options) // It's a Model
 				}
@@ -82,6 +76,8 @@ Driver.prototype = {
 		}
 	},
 
+	// Writes the json to the storeName in db.
+	// options are just success and error callbacks.
 	write: function(db, storeName, json, options) {
 		var writeTransaction = db.transaction([storeName], IDBTransaction.READ_WRITE, 0);
 		var store = writeTransaction.objectStore( storeName );
@@ -98,6 +94,7 @@ Driver.prototype = {
 		};
 	},
 	
+	// Reads from storeName in db with json.id if it's there of with any json.xxxx as long as xxx is an index in storeName 
 	read: function(db, storeName, json, options) {
 		var readTransaction = db.transaction([storeName], IDBTransaction.READ_ONLY);
 		var store = readTransaction.objectStore(storeName);
@@ -123,6 +120,7 @@ Driver.prototype = {
 		};
 	},
 	
+	// Deletes the json.id key and value in storeName from db.
 	delete: function(db, storeName, json, options) {
 		var deleteTransaction = db.transaction([storeName], IDBTransaction.READ_WRITE);
 		var store = deleteTransaction.objectStore( storeName );
@@ -135,7 +133,14 @@ Driver.prototype = {
 		}
 	},
 	
-	query: function(db, storeName, json, options) {
+	// Performs a query on storeName in db.
+	// options may include :
+	// - conditions : value of an index, or range for an index
+	// - range : range for the primary key
+	// - limit : max number of elements to be yielded
+	// - offset : skipped items.
+	// TODO : see if we could provide an options.stream where items would be yielded one by one. But that means we need to add that support into Backbone itself.
+	query: function(db, storeName, options) {
 		var elements = [];
 		var skipped = 0;
 		var queryTransaction = db.transaction([storeName], IDBTransaction.READ_ONLY);
