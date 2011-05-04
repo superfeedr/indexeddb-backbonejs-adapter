@@ -192,36 +192,63 @@ Driver.prototype = {
 
 window.driver 		= new Driver();
 
+// Keeps track of the connections
+var Connections = {};
+
+// ExecutionQueue object
+function ExecutionQueue() {
+	this.connection = null;
+};
+
+// ExecutionQueue Prototype
+ExecutionQueue.prototype = {
+	setConnection: function(connection) {
+		this.connection = connection
+	}	
+}
+
 Backbone.sync = function(method, object, options) {
 	database = object.database
-	storeName = object.storeName
-
-	console.log(database.id + " :: " + storeName + " :: " + method)
-
-	dbRequest = window.indexedDB.open(database.id, database.description || "");
-
-	dbRequest.onsuccess = function ( e ) { 
-		var db = e.target.result;		
+	if(!Connections[database.id]) {
 		
-		if ( db.version === _.last(object.database.migrations).version ) {
-			driver.execute(db, storeName, method, object.toJSON(), options)
-		} else if(db.version < _.last(object.database.migrations).version ) {
-			driver.migrate(db, object.database.migrations, db.version, {
-				success: function() {
-					driver.execute(db, storeName, method, object.toJSON(), options)
-				}, 
-				error: function() {
-					options.error("Database not up to date. " + db.version + " expected was " + _.last(object.database.migrations).version)
-				}
-			});
-		} else {
-			options.error("Database version is greater than current code " + db.version + " expected was " +_.last(object.database.migrations).version)
-		}
-	};
+		dbRequest = window.indexedDB.open(database.id, database.description || "");
+
+		dbRequest.onsuccess = function ( e ) { 
+			db = e.target.result;
+			
+			// Create an execution queue for this db connection
+			execution_queue = new ExecutionQueue();
+			execution_queue.setConnection(db); // Attach the connection ot the queue.
+			_.extend(execution_queue, Backbone.Events); // Use the Backbone.Events
+			execution_queue.bind("execute", function(message) { // Bind to the "execute" event
+				driver.execute(this.connection, message[1].storeName, message[0], message[1].toJSON(), message[2]) // Upon messages, we execute the query
+			}.bind(execution_queue))
+			
+			if (db.version === _.last(database.migrations).version) {
+				Connections[database.id] = execution_queue 
+				Connections[database.id].trigger("execute", [method, object, options])
+			} else if(db.version < _.last(database.migrations).version ) {
+				driver.migrate(db, database.migrations, db.version, {
+					success: function() {
+						Connections[database.id] = execution_queue 
+						Connections[database.id].trigger("execute", [method, object, options])
+					}, 
+					error: function() {
+						options.error("Database not up to date. " + db.version + " expected was " + _.last(database.migrations).version)
+					}
+				});
+			} else {
+				options.error("Database version is greater than current code " + db.version + " expected was " +_.last(database.migrations).version)
+			}
+		};
+		dbRequest.onerror   = function ( e ) { 
+			// Failed to open the database
+			options.error("Couldn't not connect to the database") // We probably need to show a better error log.
+		};	
 	
-	dbRequest.onerror   = function ( e ) { 
-		// Failed to open the database
-		options.error("Couldn't not connect to the database") // We probably need to show a better error log.
-	};
+	} else {
+		Connections[database.id].trigger("execute", [method, object, options])
+	}
+
 
 };
