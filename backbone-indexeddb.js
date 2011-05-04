@@ -110,14 +110,18 @@ Driver.prototype = {
 				}
 			})
 		}
-		getRequest.onsuccess = function(event){
-			if(event.target.result) {
-				options.success(event.target.result)
-			}
-			else {
-				options.error("Not Found")
-			}
-		};
+		if(getRequest) {
+			getRequest.onsuccess = function(event){
+				if(event.target.result) {
+					options.success(event.target.result)
+				}
+				else {
+					options.error("Not Found")
+				}
+			};
+		} else {
+			options.error("Not Found"); // We couldn't even look for it, as we don't have enough data.
+		}
 	},
 	
 	// Deletes the json.id key and value in storeName from db.
@@ -143,6 +147,9 @@ Driver.prototype = {
 	query: function(db, storeName, options) {
 		var elements = [];
 		var skipped = 0;
+
+		console.log(db)
+		console.log(storeName)
 
 		var queryTransaction = db.transaction([storeName], IDBTransaction.READ_ONLY);
 		var readCursor = null;
