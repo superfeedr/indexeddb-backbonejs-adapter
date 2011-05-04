@@ -148,9 +148,6 @@ Driver.prototype = {
 		var elements = [];
 		var skipped = 0;
 
-		console.log(db)
-		console.log(storeName)
-
 		var queryTransaction = db.transaction([storeName], IDBTransaction.READ_ONLY);
 		var readCursor = null;
 		var store = queryTransaction.objectStore( storeName );
