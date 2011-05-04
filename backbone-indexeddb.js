@@ -143,6 +143,7 @@ Driver.prototype = {
 	query: function(db, storeName, options) {
 		var elements = [];
 		var skipped = 0;
+
 		var queryTransaction = db.transaction([storeName], IDBTransaction.READ_ONLY);
 		var readCursor = null;
 		var store = queryTransaction.objectStore( storeName );
@@ -198,6 +199,8 @@ var Connections = {};
 // ExecutionQueue object
 function ExecutionQueue() {
 	this.connection = null;
+	this.started = false;
+	this.stack = []
 };
 
 // ExecutionQueue Prototype
@@ -210,6 +213,22 @@ ExecutionQueue.prototype = {
 Backbone.sync = function(method, object, options) {
 	database = object.database
 	if(!Connections[database.id]) {
+		Connections[database.id] = new ExecutionQueue(); 
+		_.extend(Connections[database.id], Backbone.Events); // Use the Backbone.Events
+		Connections[database.id].bind("execute", function(message) { // Bind to the "execute" event
+			if(this.started) {
+				driver.execute(this.connection, message[1].storeName, message[0], message[1].toJSON(), message[2]) // Upon messages, we execute the query
+			} else {
+				this.stack.push(message)
+			}
+		}.bind(Connections[database.id]))
+		Connections[database.id].bind("ready", function() { // Bind to the "execute" event
+			this.started = true
+			_.each(this.stack, function(message) {
+				this.trigger("execute", message)
+			}.bind(this))
+		}.bind(Connections[database.id]))
+
 		
 		dbRequest = window.indexedDB.open(database.id, database.description || "");
 
@@ -217,20 +236,16 @@ Backbone.sync = function(method, object, options) {
 			db = e.target.result;
 			
 			// Create an execution queue for this db connection
-			execution_queue = new ExecutionQueue();
-			execution_queue.setConnection(db); // Attach the connection ot the queue.
-			_.extend(execution_queue, Backbone.Events); // Use the Backbone.Events
-			execution_queue.bind("execute", function(message) { // Bind to the "execute" event
-				driver.execute(this.connection, message[1].storeName, message[0], message[1].toJSON(), message[2]) // Upon messages, we execute the query
-			}.bind(execution_queue))
+			Connections[database.id].setConnection(db); // Attach the connection ot the queue.
+			
 			
 			if (db.version === _.last(database.migrations).version) {
-				Connections[database.id] = execution_queue 
+				Connections[database.id].trigger("ready")
 				Connections[database.id].trigger("execute", [method, object, options])
 			} else if(db.version < _.last(database.migrations).version ) {
 				driver.migrate(db, database.migrations, db.version, {
 					success: function() {
-						Connections[database.id] = execution_queue 
+						Connections[database.id].trigger("ready")
 						Connections[database.id].trigger("execute", [method, object, options])
 					}, 
 					error: function() {
