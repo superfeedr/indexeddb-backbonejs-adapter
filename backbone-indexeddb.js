@@ -1,34 +1,41 @@
+(function() {
 // Generate four random hex digits.
 function S4() {
    return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
-};
+}
 
 // Generate a pseudo-GUID by concatenating random hexadecimal.
 function guid() {
    return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
-};
+}
 
-window.indexedDB      = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
-window.IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction; // No prefix in moz
-window.IDBKeyRange    = window.IDBKeyRange || window.webkitIDBKeyRange; // No prefix in moz
+var indexedDB      = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
+var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction; // No prefix in moz
+var IDBKeyRange    = window.IDBKeyRange || window.webkitIDBKeyRange; // No prefix in moz
 
 // Driver object
 function Driver() {
-};
+}
+
+function debug_log(str) {
+	if (typeof window.console !== "undefined" && typeof window.console.log !== "undefined") {
+		window.console.log(str);
+	}
+}
 
 // Driver Prototype
 Driver.prototype = {
 	
 	// Performs all the migrations to reach the right version of the database
 	migrate: function(db, migrations, version, options) {
-		console.log("Starting migrations from " + version)
+		debug_log("Starting migrations from " + version);
 		this._migrate_next(db, migrations, version, options);
 	},
 	
 	// Performs the next migrations. This method is private and should probably not be called.
 	_migrate_next: function(db, migrations, version, options) {
-		that = this
-		var migration = migrations.shift()
+		var that = this;
+		var migration = migrations.shift();
 		if( migration ) {
 			if(!version || version < migration.version) {
 				// We need to apply this migration
@@ -36,15 +43,15 @@ Driver.prototype = {
 				versionRequest.onsuccess = function ( e ) {
 					migration.migrate(db, versionRequest, function() {
 						// Migration successfully appliedn let's go to the next one!
-						console.log("Migrated to " + migration.version)
-						that._migrate_next(db, migrations, version, options)
+						debug_log("Migrated to " + migration.version);
+						that._migrate_next(db, migrations, version, options);
 					});
 				};
 			}
 			else {
 				// No need to apply this migration
-				console.log("Skipping migration " + migration.version)
-				this._migrate_next(db, migrations, version, options)
+				debug_log("Skipping migration " + migration.version);
+				this._migrate_next(db, migrations, version, options);
 			}
 		} else {
 			// No more migration
@@ -56,20 +63,20 @@ Driver.prototype = {
 	execute: function(db, storeName, method, json, options) {
 		switch(method) {
 			case "create":
-				this.write(db, storeName, json, options)
+				this.write(db, storeName, json, options);
 				break;
 			case "read":
 				if(json instanceof Array ) {
-					this.query(db, storeName, options) // It's a collection
+					this.query(db, storeName, options); // It's a collection
 				} else {
-					this.read(db, storeName, json, options) // It's a Model
+					this.read(db, storeName, json, options); // It's a Model
 				}
 				break;
 			case "update":
-				this.write(db, storeName, json, options) // We may want to check that this is not a collection
+				this.write(db, storeName, json, options); // We may want to check that this is not a collection
 				break;
 			case "delete":
-				this.delete(db, storeName, json, options) // We may want to check that this is not a collection
+				this.delete(db, storeName, json, options); // We may want to check that this is not a collection
 				break;
 			default:
 				// Hum what?
@@ -87,10 +94,10 @@ Driver.prototype = {
 		var writeRequest = store.put(json, json.id);
 		
 		writeRequest.onerror = function ( e ) {
-			options.error(e)
+			options.error(e);
 		};
 		writeRequest.onsuccess = function ( e ) {
-			options.success(json)
+			options.success(json);
 		};
 	},
 	
@@ -98,7 +105,7 @@ Driver.prototype = {
 	read: function(db, storeName, json, options) {
 		var readTransaction = db.transaction([storeName], IDBTransaction.READ_ONLY);
 		var store = readTransaction.objectStore(storeName);
-		var getRequest = null
+		var getRequest = null;
 		if(json.id) {
 			getRequest = store.get(json.id);
 		} else {
@@ -108,15 +115,15 @@ Driver.prototype = {
 				if(json[index.keyPath]) {
 					getRequest = index.get(json[index.keyPath]);
 				}
-			})
+			});
 		}
 		if(getRequest) {
 			getRequest.onsuccess = function(event){
 				if(event.target.result) {
-					options.success(event.target.result)
+					options.success(event.target.result);
 				}
 				else {
-					options.error("Not Found")
+					options.error("Not Found");
 				}
 			};
 		} else {
@@ -130,11 +137,11 @@ Driver.prototype = {
 		var store = deleteTransaction.objectStore( storeName );
 		var deleteRequest = store.delete(json.id );
 		deleteRequest.onsuccess = function(event){
-			options.success(null)
+			options.success(null);
 		};
 		deleteRequest.onerror = function(event){
-			options.error("Not Found")
-		}
+			options.error("Not Found");
+		};
 	},
 	
 	// Performs a query on storeName in db.
@@ -157,18 +164,15 @@ Driver.prototype = {
 			_.each(store.indexNames, function(key, index) {
 				index = store.index(key);
 				if(options.conditions[index.keyPath] instanceof Array) {
-					bounds = new IDBKeyRange.bound(options.conditions[index.keyPath][0], options.conditions[index.keyPath][1])
-					readCursor = index.openCursor(bounds);
+					readCursor = index.openCursor(new IDBKeyRange.bound(options.conditions[index.keyPath][0], options.conditions[index.keyPath][1]));
 				} else if(options.conditions[index.keyPath]) {
-					bounds = new IDBKeyRange.only(options.conditions[index.keyPath])
-					readCursor = index.openCursor(bounds);
+					readCursor = index.openCursor(new IDBKeyRange.only(options.conditions[index.keyPath]));
 				}
 			});
 		} else {
 			// No conditions, use the index
 			if(options.range) {
-				bounds = new IDBKeyRange.bound(options.range[0], options.range[1])
-				readCursor = store.openCursor(bounds);
+				readCursor = store.openCursor(new IDBKeyRange.bound(options.range[0], options.range[1]));
 			} else {
 				readCursor = store.openCursor();
 			}
@@ -176,26 +180,26 @@ Driver.prototype = {
 
 		// Setup a handler for the cursor’s `success` event:
 		readCursor.onsuccess = function ( e ) {
-			cursor = e.target.result;
+			var cursor = e.target.result;
 			if( (cursor) && 
 				(!options.limit || options.limit > elements.length)
 			  ) {
 				if(!options.offset || options.offset <= skipped ) {
-					elements.push(e.target.result.value)
+					elements.push(e.target.result.value);
 				} else {
 					skipped ++;
 				}
 				cursor.continue();
 			}
 			else {
-				options.success(elements)
+				options.success(elements);
 			}
 		};
 	}
 };
 
 
-window.driver 		= new Driver();
+var driver = new Driver();
 
 // Keeps track of the connections
 var Connections = {};
@@ -204,70 +208,71 @@ var Connections = {};
 function ExecutionQueue() {
 	this.connection = null;
 	this.started = false;
-	this.stack = []
-};
+	this.stack = [];
+}
 
 // ExecutionQueue Prototype
 ExecutionQueue.prototype = {
 	setConnection: function(connection) {
-		this.connection = connection
+		this.connection = connection;
 	}	
-}
+};
 
 Backbone.sync = function(method, object, options) {
-	database = object.database
+	var database = object.database;
 	if(!Connections[database.id]) {
 		Connections[database.id] = new ExecutionQueue(); 
 		_.extend(Connections[database.id], Backbone.Events); // Use the Backbone.Events
 		Connections[database.id].bind("execute", function(message) { // Bind to the "execute" event
 			if(this.started) {
-				driver.execute(this.connection, message[1].storeName, message[0], message[1].toJSON(), message[2]) // Upon messages, we execute the query
+				driver.execute(this.connection, message[1].storeName, message[0], message[1].toJSON(), message[2]); // Upon messages, we execute the query
 			} else {
-				this.stack.push(message)
+				this.stack.push(message);
 			}
-		}.bind(Connections[database.id]))
+		}.bind(Connections[database.id]));
 		Connections[database.id].bind("ready", function() { // Bind to the "execute" event
-			this.started = true
+			this.started = true;
 			_.each(this.stack, function(message) {
-				this.trigger("execute", message)
-			}.bind(this))
-		}.bind(Connections[database.id]))
+				this.trigger("execute", message);
+			}.bind(this));
+		}.bind(Connections[database.id]));
 
 		
-		dbRequest = window.indexedDB.open(database.id, database.description || "");
+		var dbRequest = indexedDB.open(database.id, database.description || "");
 
 		dbRequest.onsuccess = function ( e ) { 
-			db = e.target.result;
+			var db = e.target.result;
 			
 			// Create an execution queue for this db connection
 			Connections[database.id].setConnection(db); // Attach the connection ot the queue.
 			
 			
 			if (db.version === _.last(database.migrations).version) {
-				Connections[database.id].trigger("ready")
-				Connections[database.id].trigger("execute", [method, object, options])
+				Connections[database.id].trigger("ready");
+				Connections[database.id].trigger("execute", [method, object, options]);
 			} else if(db.version < _.last(database.migrations).version ) {
 				driver.migrate(db, database.migrations, db.version, {
 					success: function() {
-						Connections[database.id].trigger("ready")
-						Connections[database.id].trigger("execute", [method, object, options])
+						Connections[database.id].trigger("ready");
+						Connections[database.id].trigger("execute", [method, object, options]);
 					}, 
 					error: function() {
-						options.error("Database not up to date. " + db.version + " expected was " + _.last(database.migrations).version)
+						options.error("Database not up to date. " + db.version + " expected was " + _.last(database.migrations).version);
 					}
 				});
 			} else {
-				options.error("Database version is greater than current code " + db.version + " expected was " +_.last(database.migrations).version)
+				options.error("Database version is greater than current code " + db.version + " expected was " +_.last(database.migrations).version);
 			}
 		};
 		dbRequest.onerror   = function ( e ) { 
 			// Failed to open the database
-			options.error("Couldn't not connect to the database") // We probably need to show a better error log.
+			options.error("Couldn't not connect to the database"); // We probably need to show a better error log.
 		};	
 	
 	} else {
-		Connections[database.id].trigger("execute", [method, object, options])
+		Connections[database.id].trigger("execute", [method, object, options]);
 	}
 
 
 };
+})();
