@@ -8,9 +8,9 @@ function guid() {
    return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
 };
 
-window.indexedDB      = window.webkitIndexedDB;
-window.IDBTransaction = window.webkitIDBTransaction;
-window.IDBKeyRange    = window.webkitIDBKeyRange;
+window.indexedDB      = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
+window.IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction; // No prefix in moz
+window.IDBKeyRange    = window.IDBKeyRange || window.webkitIDBKeyRange; // No prefix in moz
 
 // Driver object
 function Driver() {
@@ -176,12 +176,12 @@ Driver.prototype = {
 
 		// Setup a handler for the cursor’s `success` event:
 		readCursor.onsuccess = function ( e ) {
-			cursor = event.target.result;
+			cursor = e.target.result;
 			if( (cursor) && 
 				(!options.limit || options.limit > elements.length)
 			  ) {
 				if(!options.offset || options.offset <= skipped ) {
-					elements.push(event.target.result.value)
+					elements.push(e.target.result.value)
 				} else {
 					skipped ++;
 				}

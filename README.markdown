@@ -2,10 +2,25 @@ This is an [IndexedDB](http://www.w3.org/TR/IndexedDB/) adapter for [Backbone.js
 
 # Warnings
 
-This is a very very very first attempt. I was _only_ tested with Google Chrome 11.
+This is a very very very first attempt. It was tested with Google Chrome 11 and Firefox Nightly 6.0 Alpha 1.
 It also requires the current development version of BackboneJS ([branch 0.4.0](https://github.com/documentcloud/backbone/tree/0.4.0)).
 
 *It lacks a lot of documentation, so it's good idea to look at the tests if you're interested in using it.*
+
+# Browser support and limitations
+
+In Firefox, `backbone-indexeddb.js` should work from 4.0 up; but it
+
+* won't work at all with local files (`file:///` URLs). As soon as you try to create the database it will raise an error `Permission denied for <file://> to create wrapper for object of class UnnamedClass`
+* will ask the user for permission before creating a database
+* requests permission again when the database grows to a certain size (50MB by default). After this the disk is the limit, unlike the fairly concrete and currently fixed limit (5MB by default) that `localStorage` gets (which will just fail after that with no way to ask the user to increase it).
+
+Chrome 11 and later are supported. (Chrome 9 and 10 should also work but are untested.) In Chrome 11, `backbone-indexeddb.js`
+
+* will work with `file:///` URLs, but
+* poses some hard size limit (5MB? quantity untested) unless Chrome is started with `--unlimited-quota-for-indexeddb`, with apparently no way to request increasing the quota.
+
+Other browsers implementing the Indexed Database API Working Draft should work, with some of these limitations possibly cropping up or possibly not. Support and ease of use is expected to improve in upcoming releases of browsers.
 
 # Implementation
 
