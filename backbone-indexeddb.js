@@ -157,8 +157,17 @@ Driver.prototype = {
 			_.each(store.indexNames, function(key, index) {
 				index = store.index(key);
 				if(options.conditions[index.keyPath] instanceof Array) {
-					bounds = new IDBKeyRange.bound(options.conditions[index.keyPath][0], options.conditions[index.keyPath][1])
-					readCursor = index.openCursor(bounds);
+					lower = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][1] : options.conditions[index.keyPath][0];
+					upper = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][0] : options.conditions[index.keyPath][1];
+					bounds = new IDBKeyRange.bound(lower, upper)
+					if(options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1]) {
+						// Looks like we want the DESC order
+						readCursor = index.openCursor(bounds, 2);
+					}
+					else {
+						// We want ASC order
+						readCursor = index.openCursor(bounds, 0);
+					}
 				} else if(options.conditions[index.keyPath]) {
 					bounds = new IDBKeyRange.only(options.conditions[index.keyPath])
 					readCursor = index.openCursor(bounds);
@@ -167,8 +176,15 @@ Driver.prototype = {
 		} else {
 			// No conditions, use the index
 			if(options.range) {
-				bounds = new IDBKeyRange.bound(options.range[0], options.range[1])
-				readCursor = store.openCursor(bounds);
+				lower = options.range[0] > options.range[1] ? options.range[1] : options.range[0];
+				upper = options.range[0] > options.range[1] ? options.range[0] : options.range[1];
+				bounds = new IDBKeyRange.bound(lower, upper)
+				if(options.range[0] > options.range[1]) {
+					readCursor = store.openCursor(bounds, 2);
+				}
+				else {
+					readCursor = store.openCursor(bounds, 0);
+				}
 			} else {
 				readCursor = store.openCursor();
 			}

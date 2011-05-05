@@ -102,7 +102,7 @@ You can also get all items with a given value for a a specific value of an index
 		}
 	});
 
-You can also get all items for which an indexed value is comprised between 2 values.
+You can also get all items for which an indexed value is comprised between 2 values. The collection will be sorted based on the order of these 2 keys.
 
 	var theater = new Theater() // Theater is a collection of movies
 	theater.fetch({
@@ -111,6 +111,7 @@ You can also get all items for which an indexed value is comprised between 2 val
 			// The theater collection will be populated with all the movies whose genre is "adventure", "comic", "drama", but not "thriller". 
 		}
 	});
+	
 
 
 You can also obviously combine all these.

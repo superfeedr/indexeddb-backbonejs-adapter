@@ -365,6 +365,28 @@
 					});
 				},
 			});
+		}],
+		["read collection via condition on index with a range reversed", function() {
+			var theaterToClean = new Theater()
+			theaterToClean.fetch({
+				success: function() {
+					deleteNext(theaterToClean.models, function() {
+						addAllMovies(null, function() {
+							// Now all movies are inserted. Which is good.
+							var theater = new Theater()
+							theater.fetch({
+								conditions: {format: ["f","a"]},
+								success: function() {
+									start();  
+									equals(theater.models.length, 4, "Should have 4 elements");
+									deepEqual(theater.pluck("title"), ["Ciao", "Bonjour", "Halo", "Hello"], "Should have [\"Ciao\", \"Bonjour\", \"Halo\", \"Hello\"]");
+									nextTest();
+								}
+							});
+						});
+					});
+				},
+			});
 		}]
 	]	
 		
