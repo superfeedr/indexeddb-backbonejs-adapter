@@ -1,4 +1,5 @@
 (function() {
+/*global _: false, Backbone: false */
 // Generate four random hex digits.
 function S4() {
    return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
@@ -164,9 +165,9 @@ Driver.prototype = {
 			_.each(store.indexNames, function(key, index) {
 				index = store.index(key);
 				if(options.conditions[index.keyPath] instanceof Array) {
-					lower = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][1] : options.conditions[index.keyPath][0];
-					upper = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][0] : options.conditions[index.keyPath][1];
-					bounds = new IDBKeyRange.bound(lower, upper)
+					var lower = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][1] : options.conditions[index.keyPath][0];
+					var upper = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][0] : options.conditions[index.keyPath][1];
+					var bounds = new IDBKeyRange.bound(lower, upper);
 					if(options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1]) {
 						// Looks like we want the DESC order
 						readCursor = index.openCursor(bounds, 2);
@@ -182,9 +183,9 @@ Driver.prototype = {
 		} else {
 			// No conditions, use the index
 			if(options.range) {
-				lower = options.range[0] > options.range[1] ? options.range[1] : options.range[0];
-				upper = options.range[0] > options.range[1] ? options.range[0] : options.range[1];
-				bounds = new IDBKeyRange.bound(lower, upper)
+				var lower = options.range[0] > options.range[1] ? options.range[1] : options.range[0];
+				var upper = options.range[0] > options.range[1] ? options.range[0] : options.range[1];
+				var bounds = new IDBKeyRange.bound(lower, upper);
 				if(options.range[0] > options.range[1]) {
 					readCursor = store.openCursor(bounds, 2);
 				}
