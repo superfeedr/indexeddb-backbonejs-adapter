@@ -167,7 +167,7 @@ Driver.prototype = {
 				if(options.conditions[index.keyPath] instanceof Array) {
 					var lower = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][1] : options.conditions[index.keyPath][0];
 					var upper = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][0] : options.conditions[index.keyPath][1];
-					var bounds = new IDBKeyRange.bound(lower, upper);
+					var bounds = IDBKeyRange.bound(lower, upper);
 					if(options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1]) {
 						// Looks like we want the DESC order
 						readCursor = index.openCursor(bounds, 2);
@@ -177,7 +177,7 @@ Driver.prototype = {
 						readCursor = index.openCursor(bounds, 0);
 					}
 				} else if(options.conditions[index.keyPath]) {
-					readCursor = index.openCursor(new IDBKeyRange.only(options.conditions[index.keyPath]));
+					readCursor = index.openCursor(IDBKeyRange.only(options.conditions[index.keyPath]));
 				}
 			});
 		} else {
@@ -185,7 +185,7 @@ Driver.prototype = {
 			if(options.range) {
 				var lower = options.range[0] > options.range[1] ? options.range[1] : options.range[0];
 				var upper = options.range[0] > options.range[1] ? options.range[0] : options.range[1];
-				var bounds = new IDBKeyRange.bound(lower, upper);
+				var bounds = IDBKeyRange.bound(lower, upper);
 				if(options.range[0] > options.range[1]) {
 					readCursor = store.openCursor(bounds, 2);
 				}
