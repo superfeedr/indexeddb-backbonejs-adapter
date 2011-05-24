@@ -127,6 +127,9 @@ Driver.prototype = {
 					options.error("Not Found");
 				}
 			};
+			getRequest.onerror = function() {
+			    options.error("Not Found"); // We couldn't find the record.
+			}
 		} else {
 			options.error("Not Found"); // We couldn't even look for it, as we don't have enough data.
 		}

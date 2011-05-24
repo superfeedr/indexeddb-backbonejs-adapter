@@ -199,6 +199,24 @@
 				}
 			});
 		}],
+        ["read model that do not exist with index", function() {
+            var movie = new Movie({
+                title: "Memento",
+            });
+            movie.fetch({
+                success: function(object) {
+                    // success
+                    start();
+                    equals(true, false, error);
+                    nextTest();
+                },
+                error: function(object, error) {
+                    start();
+                    equals(true, true, error);
+                    nextTest();
+                }
+            });
+        }],
 		["update model", function() {
 			var movie = new Movie();
 			movie.save({
