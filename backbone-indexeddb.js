@@ -182,21 +182,66 @@ Driver.prototype = {
 			// We have a condition, we need to use it for the cursor
 			_.each(store.indexNames, function(key, index) {
 				index = store.index(key);
-				if(options.conditions[index.keyPath] instanceof Array) {
-					var lower = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][1] : options.conditions[index.keyPath][0];
-					var upper = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][0] : options.conditions[index.keyPath][1];
-					var bounds = IDBKeyRange.bound(lower, upper);
-					if(options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1]) {
-						// Looks like we want the DESC order
-						readCursor = index.openCursor(bounds, 2);
-					}
-					else {
-						// We want ASC order
-						readCursor = index.openCursor(bounds, 0);
-					}
-				} else if(options.conditions[index.keyPath]) {
-					readCursor = index.openCursor(IDBKeyRange.only(options.conditions[index.keyPath]));
-				}
+			    // We now need to make sure we use the right index.
+			    var kp = index.keyPath.split(",");
+			    var match = true;
+			    var serialized = null;
+			    for(var condition in options.conditions) {
+			        if(serialized) {
+			            if(serialized instanceof Array) {
+			                // Array
+			                if(options.conditions[condition] instanceof Array) {
+			                    
+			                }
+			                else {
+			                    serialized = [
+			                        serialized[0] + options.conditions[condition],
+			                        serialized[1] + options.conditions[condition]
+			                    ];
+			                }
+			            } else {
+			                // Single value
+			                if(options.conditions[condition] instanceof Array) {
+			                    serialized = [
+			                    _.min([serialized + options.conditions[condition][0], serialized + options.conditions[condition][1]], function(a,b) {
+			                       return a < b
+			                    }),
+			                    _.max([serialized + options.conditions[condition][0], serialized + options.conditions[condition][1]], function(a,b) {
+			                       return a < b
+			                    })
+			                    ];
+			                }
+			                else {
+			                    serialized += serialized
+			                }
+			            }
+			        }
+			        else {
+			            serialized = options.conditions[condition]
+			        }
+			        console.log(serialized)
+			        if(!_.include(kp, condition)) {
+			            match = false;
+			        }
+			    }
+			    if(match) {
+			        console.log(serialized);
+			        if(options.conditions[index.keyPath] instanceof Array) {
+    					var lower = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][1] : options.conditions[index.keyPath][0];
+    					var upper = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][0] : options.conditions[index.keyPath][1];
+    					var bounds = IDBKeyRange.bound(lower, upper);
+    					if(options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1]) {
+    						// Looks like we want the DESC order
+    						readCursor = index.openCursor(bounds, 2);
+    					}
+    					else {
+    						// We want ASC order
+    						readCursor = index.openCursor(bounds, 0);
+    					}
+    				} else if(options.conditions[index.keyPath]) {
+    					readCursor = index.openCursor(IDBKeyRange.only(options.conditions[index.keyPath]));
+    				}
+			    }
 			});
 		} else {
 			// No conditions, use the index
