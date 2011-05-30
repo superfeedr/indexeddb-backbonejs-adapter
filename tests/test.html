@@ -31,7 +31,15 @@
 					store.createIndex("formatIndex", "format", { unique: false});
 					next();
 				}
-			}
+			}, {
+			    version: "2.0",
+    			migrate: function(db, versionRequest, next) {
+    				var store = versionRequest.transaction.objectStore("movies");
+    				store.createIndex("createdAtIndex", "created_at", { unique: false});
+    				store.createIndex("formatAndCreatedAtIndex", ["format","created_at"], { unique: false});
+    				next();
+    			}
+    		}
 		]
 	};
 
@@ -52,23 +60,28 @@
 				{
 					title: "Hello",
 					format: "blueray",
-					id: "1"
+					id: "1",
+					created_at: new Date().getTime() - 60*60*24*100
 				}, {
 					title: "Bonjour",
 					format: "dvd",
-					id: "2"
+					id: "2",
+					created_at: new Date().getTime() - 60*60*24*30
 				}, {
 					title: "Halo",
 					format: "blueray",
-					id: "3"
+					id: "3",
+					created_at: new Date().getTime() - 60*60*24*5
 				}, {
 					title: "Nihao",
 					format: "streaming",
-					id: "4"
+					id: "4",
+					created_at: new Date().getTime() - 60*60*24*3
 				}, {
 					title: "Ciao",
 					format: "dvd",
-					id: "5"
+					id: "5",
+					created_at: new Date().getTime() - 60*60*24*20
 				}
 			];
 		}
@@ -468,7 +481,30 @@
 					});
 				}
 			});
+		}],
+		["read collection via combined Index", function() {
+			var theaterToClean = new Theater();
+			theaterToClean.fetch({
+				success: function() {
+					deleteNext(theaterToClean.models, function() {
+						addAllMovies(null, function() {
+							// Now all movies are inserted. Which is good.
+							var theater = new Theater();
+							theater.fetch({
+								conditions: {format: "dvd", created_at: [0, new Date().getTime()]},
+								success: function() {
+									start();
+									equals(theater.models.length, 2, "Should have 2 elements");
+									deepEqual(theater.pluck("title"), ["Bonjour", "Ciao"], "Should have [\"Bonjour\", \"Ciao\"]");
+									nextTest();
+								}
+							});
+						});
+					});
+				}
+			});
 		}]
+		
 	];
 
 	// Let's go run the tests
