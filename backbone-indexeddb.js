@@ -40,12 +40,12 @@ Driver.prototype = {
 		if( migration ) {
 			if(!version || version < migration.version) {
 				// We need to apply this migration-
-				if(typeof migration.before) {
+				if(typeof migration.before == "undefined") {
 				    migration.before = function(db, next) {
 				        next();
 				    };
 				}
-				if(typeof migration.after) {
+				if(typeof migration.after == "undefined") {
 				    migration.after = function(db, next) {
 				        next();
 				    };
