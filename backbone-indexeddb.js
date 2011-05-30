@@ -39,15 +39,30 @@ Driver.prototype = {
 		var migration = migrations.shift();
 		if( migration ) {
 			if(!version || version < migration.version) {
-				// We need to apply this migration
-				var versionRequest = db.setVersion(migration.version );
-				versionRequest.onsuccess = function ( e ) {
-					migration.migrate(db, versionRequest, function() {
-						// Migration successfully appliedn let's go to the next one!
-						debug_log("Migrated to " + migration.version);
-						that._migrate_next(db, migrations, version, options);
-					});
-				};
+				// We need to apply this migration-
+				if(typeof migration.before) {
+				    migration.before = function(db, next) {
+				        next();
+				    };
+				}
+				if(typeof migration.after) {
+				    migration.after = function(db, next) {
+				        next();
+				    };
+				}
+				// First, let's run the before script
+				migration.before(db, function() {
+				    var versionRequest = db.setVersion(migration.version );
+				    versionRequest.onsuccess = function ( e ) {
+					    migration.migrate(db, versionRequest, function() {
+						    // Migration successfully appliedn let's go to the next one!
+						    migration.after(db, function() {
+						        debug_log("Migrated to " + migration.version);
+						        that._migrate_next(db, migrations, version, options);
+					        });
+					    });
+				    };
+			    });
 			}
 			else {
 				// No need to apply this migration

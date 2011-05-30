@@ -3,7 +3,7 @@ This is an [IndexedDB](http://www.w3.org/TR/IndexedDB/) adapter for [Backbone.js
 # Warnings
 
 This is a very very very first attempt. It was tested with Google Chrome 11 and Firefox Nightly 6.0 Alpha 1.
-It also requires the current development version of BackboneJS ([branch 0.4.0](https://github.com/documentcloud/backbone/tree/0.4.0)).
+It also requires the current development version of BackboneJS ([branch 0.5.0-pre](https://github.com/documentcloud/backbone/raw/master/backbone.js)).
 
 *It lacks a lot of documentation, so it's good idea to look at the tests if you're interested in using it.*
 
@@ -40,6 +40,8 @@ The migrations are JSON objects with the following :
 
  * `version` : the version of the database once the migration is applied.
  * `migrate` : a Javascript function that will be called by the driver to perform the migration. It is called with a `IDBDatabase` object, a `IDBVersionChangeRequest` object and a function that needs to be called when the migration is performed, so that the next migration can be executed.
+ * `before` *[optional]* : a Javascript function that will be called with the database, before the transaction is run. It's useful to update fields before updating the schema.
+ * `after` *[optional]* : a Javascript function that will be called with the database, after the transaction has been run. It's useful to update fields after updating the schema.
 
 ### Example
 
