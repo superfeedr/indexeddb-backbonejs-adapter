@@ -76,23 +76,23 @@ Driver.prototype = {
 	},
 	
 	/* This is the main method. */
-	execute: function(db, storeName, method, json, options) {
+	execute: function(db, storeName, method, object, options) {
 		switch(method) {
 			case "create":
-				this.write(db, storeName, json, options);
+				this.write(db, storeName, object.toJSON(), options);
 				break;
 			case "read":
-				if(json instanceof Array ) {
-					this.query(db, storeName, options); // It's a collection
+				if(object instanceof Backbone.Collection ) {
+					this.query(db, storeName, object, options); // It's a collection
 				} else {
-					this.read(db, storeName, json, options); // It's a Model
+					this.read(db, storeName, object.toJSON(), options); // It's a Model
 				}
 				break;
 			case "update":
-				this.write(db, storeName, json, options); // We may want to check that this is not a collection
+				this.write(db, storeName, object.toJSON(), options); // We may want to check that this is not a collection
 				break;
 			case "delete":
-				this.delete(db, storeName, json, options); // We may want to check that this is not a collection
+				this.delete(db, storeName, object.toJSON(), options); // We may want to check that this is not a collection
 				break;
 			default:
 				// Hum what?
@@ -169,8 +169,7 @@ Driver.prototype = {
 	// - range : range for the primary key
 	// - limit : max number of elements to be yielded
 	// - offset : skipped items.
-	// TODO : see if we could provide an options.stream where items would be yielded one by one. But that means we need to add that support into Backbone itself.
-	query: function(db, storeName, options) {
+	query: function(db, storeName, collection, options) {
 		var elements = [];
 		var skipped = 0;
 
@@ -222,14 +221,18 @@ Driver.prototype = {
 				(!options.limit || options.limit > elements.length)
 			  ) {
 				if(!options.offset || options.offset <= skipped ) {
-					elements.push(e.target.result.value);
+					if (options.addIndividually) {
+					  collection.add(e.target.result.value);
+					} else {
+					  elements.push(e.target.result.value);
+					}
 				} else {
 					skipped ++;
 				}
 				cursor.continue();
 			}
 			else {
-				options.success(elements);
+			  options.success(elements);
 			}
 		};
 	}
@@ -262,7 +265,7 @@ Backbone.sync = function(method, object, options) {
 		_.extend(Connections[database.id], Backbone.Events); // Use the Backbone.Events
 		Connections[database.id].bind("execute", function(message) { // Bind to the "execute" event
 			if(this.started) {
-				driver.execute(this.connection, message[1].storeName, message[0], message[1].toJSON(), message[2]); // Upon messages, we execute the query
+				driver.execute(this.connection, message[1].storeName, message[0], message[1], message[2]); // Upon messages, we execute the query
 			} else {
 				this.stack.push(message);
 			}
