@@ -51,6 +51,10 @@ The migrations are JSON objects with the following :
 		migrations : [
 			{
 				version: "1.0",
+				before: function(db, next) {
+				    // Do magic stuff before the migration. For example, before adding indices, the Chrome implementation requires to set define a value for each of the objects.
+				    next();
+				}
 				migrate: function(db, versionRequest, next) {
 					var store = db.createObjectStore("movies"); // Adds a store, we will use "movies" as the storeName in our Movie model and Collections
 					next();
@@ -86,7 +90,7 @@ Obviously, to perform this, you need to have and index on `title`, and a movie w
 
 ## Collections
 
-I added a lot of fun things to the collections, that make use of the `options` param used in Backbone to take advantage of IndexedDB's features, namely indices and cursors and bounds.
+I added a lot of fun things to the collections, that make use of the `options` param used in Backbone to take advantage of IndexedDB's features, namely **indices, cursors and bounds**.
 
 First, you can `limit` and `offset` the number of items that are being fetched by a collection.
 
@@ -109,7 +113,7 @@ You can also *provide a range* applied to the id.
 		}
 	});
 
-You can also get all items with a given value for a a specific value of an index. We use the `conditions` keyword.
+You can also get *all items with a given value for a specific value of an index*. We use the `conditions` keyword.
 
 	var theater = new Theater() // Theater is a collection of movies
 	theater.fetch({
@@ -119,7 +123,7 @@ You can also get all items with a given value for a a specific value of an index
 		}
 	});
 
-You can also get all items for which an indexed value is comprised between 2 values. The collection will be sorted based on the order of these 2 keys.
+You can also *get all items for which an indexed value is comprised between 2 values*. The collection will be sorted based on the order of these 2 keys.
 
 	var theater = new Theater() // Theater is a collection of movies
 	theater.fetch({
@@ -132,11 +136,6 @@ You can also get all items for which an indexed value is comprised between 2 val
 
 
 You can also obviously combine all these.
-
-
-
-
-
 
 
 

@@ -178,6 +178,7 @@ Driver.prototype = {
 		var readCursor = null;
 		var store = queryTransaction.objectStore( storeName );
 
+
 		if(options.conditions) {
 			// We have a condition, we need to use it for the cursor
 			_.each(store.indexNames, function(key, index) {
@@ -214,102 +215,111 @@ Driver.prototype = {
 				readCursor = store.openCursor();
 			}
 		}
-
-		// Setup a handler for the cursor’s `success` event:
-		readCursor.onsuccess = function ( e ) {
-			var cursor = e.target.result;
-			if( (cursor) && 
-				(!options.limit || options.limit > elements.length)
-			  ) {
-				if(!options.offset || options.offset <= skipped ) {
-					elements.push(e.target.result.value);
-				} else {
-					skipped ++;
-				}
-				cursor.continue();
-			}
-			else {
-				options.success(elements);
-			}
-		};
+        
+        if(typeof(readCursor) == "undefined" || !readCursor) {
+            options.error("No Cursor");
+        } else {
+    		// Setup a handler for the cursor’s `success` event:
+    		readCursor.onsuccess = function ( e ) {
+    			var cursor = e.target.result;
+    			if( (cursor) && 
+    				(!options.limit || options.limit > elements.length)
+    			  ) {
+    				if(!options.offset || options.offset <= skipped ) {
+    					elements.push(e.target.result.value);
+    				} else {
+    					skipped ++;
+    				}
+    				cursor.continue();
+    			}
+    			else {
+    				options.success(elements);
+    			}
+    		};
+        }
 	}
 };
 
-
-var driver = new Driver();
 
 // Keeps track of the connections
 var Connections = {};
 
 // ExecutionQueue object
-function ExecutionQueue() {
+function ExecutionQueue(driver, database) {
+    this.driver     = driver;
+	this.database   = database
+	this.started    = false;
+	this.stack      = [];
 	this.connection = null;
-	this.started = false;
-	this.stack = [];
+	this.dbRequest  = indexedDB.open(database.id, database.description || "");
+	this.error      = null;
+	
+	this.dbRequest.onsuccess = function ( e ) { 
+	    this.connection = e.target.result; // Attach the connection ot the queue.
+		
+		if (this.connection.version === _.last(database.migrations).version) {
+		    // No migration to perform!
+			this.ready();
+		} else if(this.connection.version < _.last(database.migrations).version ) {
+		    // We need to migrate up to the current migration defined in the database
+			driver.migrate(this.connection, database.migrations, this.connection.version, {
+				success: this.ready, 
+				error: function() {
+					this.error = "Database not up to date. " + this.connection.version + " expected was " + _.last(database.migrations).version;
+				}.bind(this)
+			});
+		} else {
+		    // Looks like the IndexedDB is at a higher version than the current database.
+			this.error = "Database version is greater than current code " + this.connection.version + " expected was " +_.last(database.migrations).version;
+		}
+	}.bind(this);
+	
+	this.dbRequest.onerror   = function ( e ) { 
+		// Failed to open the database
+		this.error = "Couldn't not connect to the database"
+	}.bind(this);
+    
+    this.dbRequest.onabort   = function ( e ) {
+		// Failed to open the database
+		this.error = "Connection to the database aborted"
+	}.bind(this);
+	
+	
 }
 
 // ExecutionQueue Prototype
 ExecutionQueue.prototype = {
-	setConnection: function(connection) {
-		this.connection = connection;
-	}	
+    
+	ready: function() {
+		this.started = true;
+		_.each(this.stack, function(message) {
+			this.execute(message);
+		}.bind(this));
+	},
+	
+	execute: function(message) {
+	    if(this.error) {
+	        message[2].error(this.error);
+	    }
+	    else {
+    	    if(this.started) {
+    			this.driver.execute(this.connection, message[1].storeName, message[0], message[1].toJSON(), message[2]); // Upon messages, we execute the query
+    		} else {
+    			this.stack.push(message);
+    		}
+	    }
+	}
+	
 };
 
 Backbone.sync = function(method, object, options) {
 	var database = object.database;
+	var driver = new Driver();
+    
 	if(!Connections[database.id]) {
-		Connections[database.id] = new ExecutionQueue(); 
-		_.extend(Connections[database.id], Backbone.Events); // Use the Backbone.Events
-		Connections[database.id].bind("execute", function(message) { // Bind to the "execute" event
-			if(this.started) {
-				driver.execute(this.connection, message[1].storeName, message[0], message[1].toJSON(), message[2]); // Upon messages, we execute the query
-			} else {
-				this.stack.push(message);
-			}
-		}.bind(Connections[database.id]));
-		Connections[database.id].bind("ready", function() { // Bind to the "execute" event
-			this.started = true;
-			_.each(this.stack, function(message) {
-				this.trigger("execute", message);
-			}.bind(this));
-		}.bind(Connections[database.id]));
-
-		
-		var dbRequest = indexedDB.open(database.id, database.description || "");
-
-		dbRequest.onsuccess = function ( e ) { 
-			var db = e.target.result;
-			
-			// Create an execution queue for this db connection
-			Connections[database.id].setConnection(db); // Attach the connection ot the queue.
-			
-			
-			if (db.version === _.last(database.migrations).version) {
-				Connections[database.id].trigger("ready");
-				Connections[database.id].trigger("execute", [method, object, options]);
-			} else if(db.version < _.last(database.migrations).version ) {
-				driver.migrate(db, database.migrations, db.version, {
-					success: function() {
-						Connections[database.id].trigger("ready");
-						Connections[database.id].trigger("execute", [method, object, options]);
-					}, 
-					error: function() {
-						options.error("Database not up to date. " + db.version + " expected was " + _.last(database.migrations).version);
-					}
-				});
-			} else {
-				options.error("Database version is greater than current code " + db.version + " expected was " +_.last(database.migrations).version);
-			}
-		};
-		dbRequest.onerror   = function ( e ) { 
-			// Failed to open the database
-			options.error("Couldn't not connect to the database"); // We probably need to show a better error log.
-		};	
+		Connections[database.id] = new ExecutionQueue(driver, database); 
+	} 
+	Connections[database.id].execute([method, object, options]);
 	
-	} else {
-		Connections[database.id].trigger("execute", [method, object, options]);
-	}
-
-
 };
 })();
