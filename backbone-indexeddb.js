@@ -76,23 +76,23 @@ Driver.prototype = {
 	},
 	
 	/* This is the main method. */
-	execute: function(db, storeName, method, json, options) {
+	execute: function(db, storeName, method, object, options) {
 		switch(method) {
 			case "create":
-				this.write(db, storeName, json, options);
+				this.write(db, storeName, object, options);
 				break;
 			case "read":
-				if(json instanceof Array ) {
-					this.query(db, storeName, options); // It's a collection
+				if(object instanceof Backbone.Collection ) {
+					this.query(db, storeName, object, options); // It's a collection
 				} else {
-					this.read(db, storeName, json, options); // It's a Model
+					this.read(db, storeName, object, options); // It's a Model
 				}
 				break;
 			case "update":
-				this.write(db, storeName, json, options); // We may want to check that this is not a collection
+				this.write(db, storeName, object, options); // We may want to check that this is not a collection
 				break;
 			case "delete":
-				this.delete(db, storeName, json, options); // We may want to check that this is not a collection
+				this.delete(db, storeName, object, options); // We may want to check that this is not a collection
 				break;
 			default:
 				// Hum what?
@@ -101,10 +101,11 @@ Driver.prototype = {
 
 	// Writes the json to the storeName in db.
 	// options are just success and error callbacks.
-	write: function(db, storeName, json, options) {
+	write: function(db, storeName, object, options) {
 		var writeTransaction = db.transaction([storeName], IDBTransaction.READ_WRITE, 0);
 		var store = writeTransaction.objectStore( storeName );
-
+        var json = object.toJSON();
+        
 	    if (!json.id) json.id = guid();
 		
 		var writeRequest = store.put(json, json.id);
@@ -118,9 +119,11 @@ Driver.prototype = {
 	},
 	
 	// Reads from storeName in db with json.id if it's there of with any json.xxxx as long as xxx is an index in storeName 
-	read: function(db, storeName, json, options) {
+	read: function(db, storeName, object, options) {
 		var readTransaction = db.transaction([storeName], IDBTransaction.READ_ONLY);
 		var store = readTransaction.objectStore(storeName);
+		var json = object.toJSON();
+        
 		var getRequest = null;
 		if(json.id) {
 			getRequest = store.get(json.id);
@@ -151,10 +154,12 @@ Driver.prototype = {
 	},
 	
 	// Deletes the json.id key and value in storeName from db.
-	delete: function(db, storeName, json, options) {
+	delete: function(db, storeName, object, options) {
 		var deleteTransaction = db.transaction([storeName], IDBTransaction.READ_WRITE);
 		var store = deleteTransaction.objectStore( storeName );
-		var deleteRequest = store.delete(json.id );
+		var json = object.toJSON();
+		
+		var deleteRequest = store.delete(json.id);
 		deleteRequest.onsuccess = function(event){
 			options.success(null);
 		};
@@ -169,8 +174,7 @@ Driver.prototype = {
 	// - range : range for the primary key
 	// - limit : max number of elements to be yielded
 	// - offset : skipped items.
-	// TODO : see if we could provide an options.stream where items would be yielded one by one. But that means we need to add that support into Backbone itself.
-	query: function(db, storeName, options) {
+	query: function(db, storeName, collection, options) {
 		var elements = [];
 		var skipped = 0;
 
@@ -226,7 +230,12 @@ Driver.prototype = {
     				(!options.limit || options.limit > elements.length)
     			  ) {
     				if(!options.offset || options.offset <= skipped ) {
-    					elements.push(e.target.result.value);
+    				    if (options.addIndividually) {
+    					    collection.add(e.target.result.value);
+					    }
+					    else {
+    					    elements.push(e.target.result.value);
+					    }
     				} else {
     					skipped ++;
     				}
@@ -303,7 +312,7 @@ ExecutionQueue.prototype = {
 	    }
 	    else {
     	    if(this.started) {
-    			this.driver.execute(this.connection, message[1].storeName, message[0], message[1].toJSON(), message[2]); // Upon messages, we execute the query
+    			this.driver.execute(this.connection, message[1].storeName, message[0], message[1], message[2]); // Upon messages, we execute the query
     		} else {
     			this.stack.push(message);
     		}
