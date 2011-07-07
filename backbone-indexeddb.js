@@ -1,14 +1,10 @@
 (function () { /*global _: false, Backbone: false */
     // Generate four random hex digits.
-
-
     function S4() {
         return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
     }
 
     // Generate a pseudo-GUID by concatenating random hexadecimal.
-
-
     function guid() {
         return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
     }
@@ -16,9 +12,8 @@
     var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
     var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction; // No prefix in moz
     var IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange; // No prefix in moz
+
     // Driver object
-
-
     function Driver() {}
 
     function debug_log(str) {
@@ -250,8 +245,6 @@
     var Connections = {};
 
     // ExecutionQueue object
-
-
     function ExecutionQueue(driver, database) {
         this.driver = driver;
         this.database = database
@@ -325,6 +318,5 @@
             Connections[database.id] = new ExecutionQueue(driver, database);
         }
         Connections[database.id].execute([method, object, options]);
-
     };
 })();
