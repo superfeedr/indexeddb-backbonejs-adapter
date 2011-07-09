@@ -133,6 +133,18 @@ You can also *get all items for which an indexed value is comprised between 2 va
 		}
 	});
 	
+You can also *get all items after a certain object (excluding that object), or from a certain object (including) to a certain object (including)* (using their ids). This combined with the addIndividually option allows you to lazy load a full collection, by always loading the next element.
+
+    	var theater = new Theater() // Theater is a collection of movies
+    	theater.fetch({
+    		from: new Movie({id: 12345, ...}),
+    		after: new Movie({id: 12345, ...}),
+    		to: new Movie({id: 12345, ...}),
+    		success: function() {
+    			// The theater collection will be populated with all the movies whose genre is "adventure", "comic", "drama", but not "thriller". 
+    		}
+    	});
+
 
 You can also obviously combine all these.
 

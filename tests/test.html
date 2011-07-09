@@ -50,6 +50,8 @@
                 model: Movie
             });
 
+            
+
             function addAllMovies(movies, done) {
                 if (!movies) {
                     movies = [{
@@ -311,6 +313,8 @@
                                         success: function() {
                                             start();
                                             equals(theater.models.length, 5, "Should have 5 elements");
+                                            deepEqual(theater.pluck("title"), ["Hello", "Bonjour", "Halo", "Nihao", "Ciao"], "Should have [\"Hello\", \"Bonjour\", \"Halo\", \"Nihao\", \"Ciao\"]");
+                                            
                                             nextTest();
                                         }
                                     });
@@ -456,6 +460,57 @@
                         }
                     });
                 }],
+                ["read collection via condition on index with a range and a limit", function() {
+                    var theaterToClean = new Theater();
+                    theaterToClean.fetch({
+                        success: function() {
+                            deleteNext(theaterToClean.models, function() {
+                                addAllMovies(null, function() {
+                                    // Now all movies are inserted. Which is good.
+                                    var theater = new Theater();
+                                    theater.fetch({
+                                        limit: 2,
+                                        conditions: {
+                                            format: ["a", "f"]
+                                        },
+                                        success: function() {
+                                            start();
+                                            equals(theater.models.length, 2, "Should have 2 elements");
+                                            deepEqual(theater.pluck("title"), ["Hello", "Halo"], "Should have [\"Hello\", \"Halo\"]");
+                                            nextTest();
+                                        }
+                                    });
+                                });
+                            });
+                        }
+                    });
+                }],
+                ["read collection via condition on index with a range, an offset and a limit", function() {
+                    var theaterToClean = new Theater();
+                    theaterToClean.fetch({
+                        success: function() {
+                            deleteNext(theaterToClean.models, function() {
+                                addAllMovies(null, function() {
+                                    // Now all movies are inserted. Which is good.
+                                    var theater = new Theater();
+                                    theater.fetch({
+                                        offset: 2,
+                                        limit: 2,
+                                        conditions: {
+                                            format: ["a", "f"]
+                                        },
+                                        success: function() {
+                                            start();
+                                            equals(theater.models.length, 2, "Should have 2 elements");
+                                            deepEqual(theater.pluck("title"), ["Bonjour", "Ciao"], "Should have [\"Bonjour\", \"Ciao\"]");
+                                            nextTest();
+                                        }
+                                    });
+                                });
+                            });
+                        }
+                    });
+                }],
                 ["read collection via condition on index with a range reversed", function() {
                     var theaterToClean = new Theater();
                     theaterToClean.fetch({
@@ -480,7 +535,211 @@
                         }
                     });
                 }],
-                ["Testing support for the 'addIndividually' property", function() {
+                
+                ["read collection with from", function() {
+                    var theaterToClean = new Theater();
+                    theaterToClean.fetch({
+                        success: function() {
+                            deleteNext(theaterToClean.models, function() {
+                                addAllMovies(null, function() {
+                                    // Now all movies are inserted. Which is good.
+                                    var theater = new Theater();
+                                    theater.fetch({
+                                        from: new Movie({
+                                            title: "Bonjour",
+                                            format: "dvd",
+                                            id: "2"
+                                        }),
+                                        success: function() {
+                                            start();
+                                            equals(theater.models.length, 4, "Should have 4 elements");
+                                            deepEqual(theater.pluck("title"), ["Bonjour", "Halo", "Nihao", "Ciao"], "Should have [\"Bonjour\", \"Halo\", \"Nihao\", \"Ciao\"]");
+                                            nextTest();
+                                        }
+                                    });
+                                });
+                            });
+                        }
+                    });
+                }],
+                ["read collection with a to", function() {
+                    var theaterToClean = new Theater();
+                    theaterToClean.fetch({
+                        success: function() {
+                            deleteNext(theaterToClean.models, function() {
+                                addAllMovies(null, function() {
+                                    // Now all movies are inserted. Which is good.
+                                    var theater = new Theater();
+                                    theater.fetch({
+                                        to: new Movie({
+                                            title: "Halo",
+                                            format: "blueray",
+                                            id: "3"
+                                        }),
+                                        success: function() {
+                                            start();
+                                            equals(theater.models.length, 3, "Should have 3 elements");
+                                            deepEqual(theater.pluck("title"), ["Hello", "Bonjour", "Halo"], "Should have [\"Hello\", \"Bonjour\", \"Halo\"]");
+                                            nextTest();
+                                        }
+                                    });
+                                });
+                            });
+                        }
+                    });
+                }],
+                ["read collection with from and to", function() {
+                    var theaterToClean = new Theater();
+                    theaterToClean.fetch({
+                        success: function() {
+                            deleteNext(theaterToClean.models, function() {
+                                addAllMovies(null, function() {
+                                    // Now all movies are inserted. Which is good.
+                                    var theater = new Theater();
+                                    theater.fetch({
+                                        from:  new Movie({
+                                            title: "Bonjour",
+                                            format: "dvd",
+                                            id: "2"
+                                        }),
+                                        to: new Movie({
+                                            title: "Halo",
+                                            format: "blueray",
+                                            id: "3"
+                                        }),
+                                        success: function() {
+                                            start();
+                                            equals(theater.models.length, 2, "Should have 2 elements");
+                                            deepEqual(theater.pluck("title"), ["Bonjour", "Halo"], "Should have [\"Bonjour\", \"Halo\"]");
+                                            nextTest();
+                                        }
+                                    });
+                                });
+                            });
+                        }
+                    });
+                }],
+                ["read collection with after", function() {
+                    var theaterToClean = new Theater();
+                    theaterToClean.fetch({
+                        success: function() {
+                            deleteNext(theaterToClean.models, function() {
+                                addAllMovies(null, function() {
+                                    // Now all movies are inserted. Which is good.
+                                    var theater = new Theater();
+                                    theater.fetch({
+                                        after: new Movie({
+                                            title: "Nihao",
+                                            format: "streaming",
+                                            id: "4"
+                                        }),
+                                        success: function() {
+                                            start();
+                                            equals(theater.models.length, 1, "Should have 1 elements");
+                                            deepEqual(theater.pluck("title"), ["Ciao"], "Should have [\"Ciao\"]");
+                                            nextTest();
+                                        }
+                                    });
+                                });
+                            });
+                        }
+                    });
+                }],
+                ["read collection with from on index", function() {
+                    var theaterToClean = new Theater();
+                    theaterToClean.fetch({
+                        success: function() {
+                            deleteNext(theaterToClean.models, function() {
+                                addAllMovies(null, function() {
+                                    // Now all movies are inserted. Which is good.
+                                    var theater = new Theater();
+                                    theater.fetch({
+                                        conditions: {
+                                            format: ["a", "f"]
+                                        },
+                                        from: new Movie({
+                                            title: "Bonjour",
+                                            format: "dvd",
+                                            id: "2"
+                                        }),
+                                        success: function() {
+                                            start();
+                                            equals(theater.models.length, 3, "Should have 3 elements");
+                                            deepEqual(theater.pluck("title"), ["Halo", "Bonjour", "Ciao"], "Should have [\"Halo\", \"Bonjour\", \"Ciao\"]");
+                                            
+                                            nextTest();
+                                            
+                                        }
+                                    });
+                                });
+                            });
+                        }
+                    });
+                }],
+                ["read collection with a to", function() {
+                    var theaterToClean = new Theater();
+                    theaterToClean.fetch({
+                        success: function() {
+                            deleteNext(theaterToClean.models, function() {
+                                addAllMovies(null, function() {
+                                    // Now all movies are inserted. Which is good.
+                                    var theater = new Theater();
+                                    theater.fetch({
+                                        conditions: {
+                                            format: ["a", "f"]
+                                        },
+                                        to: new Movie({
+                                            title: "Halo",
+                                            format: "blueray",
+                                            id: "3"
+                                        }),
+                                        success: function() {
+                                            start();
+                                            equals(theater.models.length, 3, "Should have 3 elements");
+                                            deepEqual(theater.pluck("title"), ["Hello", "Halo", "Bonjour"], "Should have [\"Hello\", \"Halo\", \"Bonjour\"]");
+                                            nextTest();
+                                        }
+                                    });
+                                });
+                            });
+                        }
+                    });
+                }],
+                ["read collection with from and to", function() {
+                    var theaterToClean = new Theater();
+                    theaterToClean.fetch({
+                        success: function() {
+                            deleteNext(theaterToClean.models, function() {
+                                addAllMovies(null, function() {
+                                    // Now all movies are inserted. Which is good.
+                                    var theater = new Theater();
+                                    theater.fetch({
+                                        conditions: {
+                                            format: ["a", "f"]
+                                        },
+                                        from:  new Movie({
+                                            title: "Bonjour",
+                                            format: "dvd",
+                                            id: "2"
+                                        }),
+                                        to: new Movie({
+                                            title: "Halo",
+                                            format: "blueray",
+                                            id: "3"
+                                        }),
+                                        success: function() {
+                                            start();
+                                            equals(theater.models.length, 2, "Should have 2 elements");
+                                            deepEqual(theater.pluck("title"), ["Halo", "Bonjour"], "Should have [\"Halo\", \"Bonjour\"]");
+                                            nextTest();
+                                        }
+                                    });
+                                });
+                            });
+                        }
+                    });
+                }],
+                ["support for the 'addIndividually' property", function() {
                     var counter = 0,
                         theater = new Theater();
                     theater.fetch({

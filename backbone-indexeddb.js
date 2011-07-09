@@ -177,16 +177,19 @@
             var queryTransaction = db.transaction([storeName], IDBTransaction.READ_ONLY);
             var readCursor = null;
             var store = queryTransaction.objectStore(storeName);
-
+            var index = null,
+                lower = null,
+                upper = null,
+                bounds = null
 
             if (options.conditions) {
                 // We have a condition, we need to use it for the cursor
-                _.each(store.indexNames, function (key, index) {
+                _.each(store.indexNames, function (key) {
                     index = store.index(key);
                     if (options.conditions[index.keyPath] instanceof Array) {
-                        var lower = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][1] : options.conditions[index.keyPath][0];
-                        var upper = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][0] : options.conditions[index.keyPath][1];
-                        var bounds = IDBKeyRange.bound(lower, upper);
+                        lower = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][1] : options.conditions[index.keyPath][0];
+                        upper = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][0] : options.conditions[index.keyPath][1];
+                        bounds = IDBKeyRange.bound(lower, upper);
                         if (options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1]) {
                             // Looks like we want the DESC order
                             readCursor = index.openCursor(bounds, 2);
@@ -195,15 +198,16 @@
                             readCursor = index.openCursor(bounds, 0);
                         }
                     } else if (options.conditions[index.keyPath]) {
-                        readCursor = index.openCursor(IDBKeyRange.only(options.conditions[index.keyPath]));
+                        bounds = IDBKeyRange.only(options.conditions[index.keyPath]);
+                        readCursor = index.openCursor(bounds);
                     }
                 });
             } else {
                 // No conditions, use the index
                 if (options.range) {
-                    var lower = options.range[0] > options.range[1] ? options.range[1] : options.range[0];
-                    var upper = options.range[0] > options.range[1] ? options.range[0] : options.range[1];
-                    var bounds = IDBKeyRange.bound(lower, upper);
+                    lower = options.range[0] > options.range[1] ? options.range[1] : options.range[0];
+                    upper = options.range[0] > options.range[1] ? options.range[0] : options.range[1];
+                    bounds = IDBKeyRange.bound(lower, upper);
                     if (options.range[0] > options.range[1]) {
                         readCursor = store.openCursor(bounds, 2);
                     } else {
@@ -221,19 +225,39 @@
                 readCursor.onsuccess = function (e) {
                     var cursor = e.target.result;
                     if ((cursor) && (!options.limit || options.limit > elements.length)) {
-                        if (!options.offset || options.offset <= skipped) {
-                            if (options.addIndividually) {
-                                collection.add(e.target.result.value);
+                        if(options.from && options.from.id > cursor.value.id) {
+                            cursor.continue();
+                        }
+                        else if(options.after && options.after.id >= cursor.value.id) {
+                            cursor.continue();
+                        }
+                        else {
+                            if(options.to && options.to.id < cursor.value.id) {
+                                cursor.continue(); /* We need to 'terminate' the cursor cleany, by moving to the end */
+                            }
+                            else {
+                                if (!options.offset || options.offset <= skipped) {
+                                    if (options.addIndividually) {
+                                        collection.add(cursor.value);
+                                    } else {
+                                        elements.push(cursor.value);
+                                    }
+                                } else {
+                                    skipped++;
+                                }
+                                cursor.continue();
+                            }
+                        }
+                    } else {
+                        if(cursor) {
+                            if(bounds) {
+                                cursor.continue(bounds.upper); /* We need to 'terminate' the cursor cleany, by moving to the end */
                             } else {
-                                elements.push(e.target.result.value);
+                                cursor.continue(); /* We need to 'terminate' the cursor cleany, by moving to the end */
                             }
                         } else {
-                            skipped++;
+                            options.success(elements);
                         }
-                        cursor.
-                        continue ();
-                    } else {
-                        options.success(elements);
                     }
                 };
             }
