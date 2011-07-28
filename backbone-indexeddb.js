@@ -67,6 +67,7 @@
                     this._migrate_next(db, migrations, version, options);
                 }
             } else {
+                debug_log("Done migrating");
                 // No more migration
                 options.success();
             }
@@ -128,7 +129,7 @@
                 // We need to find which index we have
                 _.each(store.indexNames, function (key, index) {
                     index = store.index(key);
-                    if (json[index.keyPath]) {
+                    if (index.unique && json[index.keyPath] && !getRequest) {
                         getRequest = index.get(json[index.keyPath]);
                     }
                 });
@@ -172,34 +173,36 @@
         // - offset : skipped items.
         query: function (db, storeName, collection, options) {
             var elements = [];
-            var skipped = 0;
+            var skipped = 0, processed = 0;
 
-            var queryTransaction = db.transaction([storeName], IDBTransaction.READ_ONLY);
+            var queryTransaction = db.transaction([storeName], IDBTransaction.READ_WRITE);
             var readCursor = null;
             var store = queryTransaction.objectStore(storeName);
             var index = null,
                 lower = null,
                 upper = null,
-                bounds = null
+                bounds = null;
 
             if (options.conditions) {
                 // We have a condition, we need to use it for the cursor
                 _.each(store.indexNames, function (key) {
-                    index = store.index(key);
-                    if (options.conditions[index.keyPath] instanceof Array) {
-                        lower = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][1] : options.conditions[index.keyPath][0];
-                        upper = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][0] : options.conditions[index.keyPath][1];
-                        bounds = IDBKeyRange.bound(lower, upper);
-                        if (options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1]) {
-                            // Looks like we want the DESC order
-                            readCursor = index.openCursor(bounds, 2);
-                        } else {
-                            // We want ASC order
-                            readCursor = index.openCursor(bounds, 0);
+                    if(!readCursor) {
+                        index = store.index(key);
+                        if (options.conditions[index.keyPath] instanceof Array) {
+                            lower = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][1] : options.conditions[index.keyPath][0];
+                            upper = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][0] : options.conditions[index.keyPath][1];
+                            bounds = IDBKeyRange.bound(lower, upper);
+                            if (options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1]) {
+                                // Looks like we want the DESC order
+                                readCursor = index.openCursor(bounds, 2);
+                            } else {
+                                // We want ASC order
+                                readCursor = index.openCursor(bounds, 0);
+                            }
+                        } else if (options.conditions[index.keyPath]) {
+                            bounds = IDBKeyRange.only(options.conditions[index.keyPath]);
+                            readCursor = index.openCursor(bounds);
                         }
-                    } else if (options.conditions[index.keyPath]) {
-                        bounds = IDBKeyRange.only(options.conditions[index.keyPath]);
-                        readCursor = index.openCursor(bounds);
                     }
                 });
             } else {
@@ -217,46 +220,65 @@
                     readCursor = store.openCursor();
                 }
             }
-
+            
             if (typeof (readCursor) == "undefined" || !readCursor) {
                 options.error("No Cursor");
             } else {
                 // Setup a handler for the cursor’s `success` event:
                 readCursor.onsuccess = function (e) {
                     var cursor = e.target.result;
-                    if ((cursor) && (!options.limit || options.limit > elements.length)) {
-                        if(options.from && options.from.id > cursor.value.id) {
-                            cursor.continue();
+                    if(!cursor) {
+                        if (options.addIndividually || options.delete) {
+                            // nothing!
+                            // We need to indicate that we're done. But, how?
+                            collection.trigger("reset");
+                        } else {
+                            options.success(elements); // We're done. No more elements.
                         }
-                        else if(options.after && options.after.id >= cursor.value.id) {
-                            cursor.continue();
+                    }
+                    else {
+                        // Cursor is not over yet.
+                        if(options.from && options.from.attributes[readCursor.source.keyPath] <= cursor.value[readCursor.source.keyPath]) {
+                            // But we are not yet at the element with which we'll start
+                            cursor.continue(options.from.attributes[readCursor.source.keyPath]); // We should rather advance to the right key TODO
                         }
-                        else {
-                            if(options.to && options.to.id < cursor.value.id) {
-                                cursor.continue(); /* We need to 'terminate' the cursor cleany, by moving to the end */
-                            }
-                            else {
-                                if (!options.offset || options.offset <= skipped) {
-                                    if (options.addIndividually) {
-                                        collection.add(cursor.value);
-                                    } else {
-                                        elements.push(cursor.value);
-                                    }
-                                } else {
-                                    skipped++;
-                                }
-                                cursor.continue();
-                            }
-                        }
-                    } else {
-                        if(cursor) {
-                            if(bounds) {
-                                cursor.continue(bounds.upper); /* We need to 'terminate' the cursor cleany, by moving to the end */
+                        else if(options.limit && processed >= options.limit) {
+                            // Yet, we have processed enough elements. So, let's just skip.
+                            if(bounds && options.conditions[index.keyPath]) {
+                                cursor.continue(options.conditions[index.keyPath][1] + 1); /* We need to 'terminate' the cursor cleany, by moving to the end */
                             } else {
                                 cursor.continue(); /* We need to 'terminate' the cursor cleany, by moving to the end */
                             }
+                        }
+                        else if(options.to && options.to.id != cursor.value.id && !to_found) {
+                            // // Yet, we have processed all elements before the to.
+                            if(bounds) {
+                                cursor.continue(options.conditions[index.keyPath][1] + 1); /* We need to 'terminate' the cursor cleany, by moving to the end */
+                            } else {
+                                cursor.continue(); /* We need to 'terminate' the cursor cleany, by moving to the end */
+                            }
+                        }
+                        else if(options.offset && options.offset < skipped) {
+                            skipped++;
+                            cursor.continue(options.offset - skipped); /* We need to 'terminate' the cursor cleany, by moving to the end */
                         } else {
-                            options.success(elements);
+                            // This time, it looks like it's good!
+                            processed++;
+                            if (options.addIndividually) {
+                                collection.add(cursor.value);
+                            } else if(options.delete) {
+                                var deleteRequest = store.delete(cursor.value.id);
+                                deleteRequest.onsuccess = function (event) {
+                                    elements.push(cursor.value);
+                                };
+                                deleteRequest.onerror = function (event) {
+                                    elements.push(cursor.value);
+                                };
+                                
+                            } else {
+                                elements.push(cursor.value);
+                            }
+                            cursor.continue(); 
                         }
                     }
                 };
@@ -286,7 +308,9 @@
             } else if (this.connection.version < _.last(database.migrations).version) {
                 // We need to migrate up to the current migration defined in the database
                 driver.migrate(this.connection, database.migrations, this.connection.version, {
-                    success: this.ready,
+                    success: function() {
+                        this.ready();
+                    }.bind(this),
                     error: function () {
                         this.error = "Database not up to date. " + this.connection.version + " expected was " + _.last(database.migrations).version;
                     }.bind(this)
