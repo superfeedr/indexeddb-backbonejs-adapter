@@ -131,6 +131,7 @@
             var store = readTransaction.objectStore(storeName);
             var json = object.toJSON();
 
+
             var getRequest = null;
             if (json.id) {
                 getRequest = store.get(json.id);
@@ -170,7 +171,7 @@
                 options.success(null);
             };
             deleteRequest.onerror = function (event) {
-                options.error("Not Found");
+                options.error("Not Deleted");
             };
         },
 

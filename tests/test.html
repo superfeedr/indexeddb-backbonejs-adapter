@@ -25,7 +25,7 @@
                 migrate: function (db, versionRequest, next) {
                     var store = versionRequest.transaction.objectStore("movies");
                     store.createIndex("titleIndex", "title", {
-                        unique: false
+                        unique: true
                     });
                     store.createIndex("formatIndex", "format", {
                         unique: false
@@ -204,12 +204,12 @@
                     success: function () {
                         movie.destroy({
                             success: function () {
-                                // saveMovieAndReadWithIndex(movie);
+                                saveMovieAndReadWithIndex(movie);
                             }
                         });
                     },
                     error: function () {
-                        // saveMovieAndReadWithIndex(movie);
+                        saveMovieAndReadWithIndex(movie);
                     }
                 });
 
