@@ -270,7 +270,6 @@
                         }
                         else if (options.offset && options.offset > skipped) {
                             skipped++;
-                            console.log(skipped)
                             cursor.continue(options.offset - skipped); /* We need to Moving the cursor forward */
                         } else {
                             // This time, it looks like it's good!
