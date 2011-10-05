@@ -139,7 +139,7 @@
                 // We need to find which index we have
                 _.each(store.indexNames, function (key, index) {
                     index = store.index(key);
-                    if (index.unique && json[index.keyPath] && !getRequest) {
+                    if (json[index.keyPath] && !getRequest) {
                         getRequest = index.get(json[index.keyPath]);
                     }
                 });
@@ -268,9 +268,10 @@
                                 cursor.continue(); /* We need to 'terminate' the cursor cleany, by moving to the end */
                             }
                         }
-                        else if (options.offset && options.offset < skipped) {
+                        else if (options.offset && options.offset > skipped) {
                             skipped++;
-                            cursor.continue(options.offset - skipped); /* We need to 'terminate' the cursor cleany, by moving to the end */
+                            console.log(skipped)
+                            cursor.continue(options.offset - skipped); /* We need to Moving the cursor forward */
                         } else {
                             // This time, it looks like it's good!
                             processed++;

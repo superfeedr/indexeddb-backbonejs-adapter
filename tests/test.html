@@ -25,7 +25,7 @@
                 migrate: function (db, versionRequest, next) {
                     var store = versionRequest.transaction.objectStore("movies");
                     store.createIndex("titleIndex", "title", {
-                        unique: true
+                        unique: false
                     });
                     store.createIndex("formatIndex", "format", {
                         unique: false
