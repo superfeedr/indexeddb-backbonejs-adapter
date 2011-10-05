@@ -13,6 +13,15 @@
     var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction; // No prefix in moz
     var IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange; // No prefix in moz
 
+    /* Horrible Hack to prevent ' Expected an identifier and instead saw 'continue' (a reserved word).'*/
+    if (window.indexedDB) {
+         indexedDB.prototype._continue =  indexedDB.prototype.continue;
+    } else if (window.webkitIDBRequest) {
+        webkitIDBRequest.prototype._continue = webkitIDBRequest.prototype.continue;
+    } else if(window.mozIndexedDB) {
+        mozIndexedDB.prototype._continue = mozIndexedDB.prototype.continue;
+    }
+    
     // Driver object
     function Driver() {}
 
@@ -186,7 +195,7 @@
             if (options.conditions) {
                 // We have a condition, we need to use it for the cursor
                 _.each(store.indexNames, function (key) {
-                    if(!readCursor) {
+                    if (!readCursor) {
                         index = store.index(key);
                         if (options.conditions[index.keyPath] instanceof Array) {
                             lower = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][1] : options.conditions[index.keyPath][0];
@@ -227,8 +236,8 @@
                 // Setup a handler for the cursor’s `success` event:
                 readCursor.onsuccess = function (e) {
                     var cursor = e.target.result;
-                    if(!cursor) {
-                        if (options.addIndividually || options.delete) {
+                    if (!cursor) {
+                        if (options.addIndividually || options.clear) {
                             // nothing!
                             // We need to indicate that we're done. But, how?
                             collection.trigger("reset");
@@ -238,27 +247,27 @@
                     }
                     else {
                         // Cursor is not over yet.
-                        if(options.from && options.from.attributes[readCursor.source.keyPath] <= cursor.value[readCursor.source.keyPath]) {
+                        if (options.from && options.from.attributes[readCursor.source.keyPath] <= cursor.value[readCursor.source.keyPath]) {
                             // But we are not yet at the element with which we'll start
                             cursor.continue(options.from.attributes[readCursor.source.keyPath]); // We should rather advance to the right key TODO
                         }
-                        else if(options.limit && processed >= options.limit) {
+                        else if (options.limit && processed >= options.limit) {
                             // Yet, we have processed enough elements. So, let's just skip.
-                            if(bounds && options.conditions[index.keyPath]) {
+                            if (bounds && options.conditions[index.keyPath]) {
                                 cursor.continue(options.conditions[index.keyPath][1] + 1); /* We need to 'terminate' the cursor cleany, by moving to the end */
                             } else {
                                 cursor.continue(); /* We need to 'terminate' the cursor cleany, by moving to the end */
                             }
                         }
-                        else if(options.to && options.to.id != cursor.value.id && !to_found) {
+                        else if (options.to && options.to.id != cursor.value.id) {
                             // // Yet, we have processed all elements before the to.
-                            if(bounds) {
+                            if (bounds) {
                                 cursor.continue(options.conditions[index.keyPath][1] + 1); /* We need to 'terminate' the cursor cleany, by moving to the end */
                             } else {
                                 cursor.continue(); /* We need to 'terminate' the cursor cleany, by moving to the end */
                             }
                         }
-                        else if(options.offset && options.offset < skipped) {
+                        else if (options.offset && options.offset < skipped) {
                             skipped++;
                             cursor.continue(options.offset - skipped); /* We need to 'terminate' the cursor cleany, by moving to the end */
                         } else {
@@ -266,7 +275,7 @@
                             processed++;
                             if (options.addIndividually) {
                                 collection.add(cursor.value);
-                            } else if(options.delete) {
+                            } else if (options.clear) {
                                 var deleteRequest = store.delete(cursor.value.id);
                                 deleteRequest.onsuccess = function (event) {
                                     elements.push(cursor.value);
@@ -308,7 +317,7 @@
             } else if (this.connection.version < _.last(database.migrations).version) {
                 // We need to migrate up to the current migration defined in the database
                 driver.migrate(this.connection, database.migrations, this.connection.version, {
-                    success: function() {
+                    success: function () {
                         this.ready();
                     }.bind(this),
                     error: function () {
