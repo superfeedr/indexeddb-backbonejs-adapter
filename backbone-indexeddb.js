@@ -184,7 +184,7 @@
         query: function (db, storeName, collection, options) {
             var elements = [];
             var skipped = 0, processed = 0;
-
+            var from_found = false, to_found = false;
             var queryTransaction = db.transaction([storeName], IDBTransaction.READ_WRITE);
             var readCursor = null;
             var store = queryTransaction.objectStore(storeName);
@@ -248,9 +248,14 @@
                     }
                     else {
                         // Cursor is not over yet.
-                        if (options.from && options.from.attributes[readCursor.source.keyPath] <= cursor.value[readCursor.source.keyPath]) {
+                        if (options.from && options.from.attributes[readCursor.source.keyPath] <= [readCursor.source.keyPath]) {
+                            // Using From on an index
                             // But we are not yet at the element with which we'll start
                             cursor.continue(options.from.attributes[readCursor.source.keyPath]); // We should rather advance to the right key TODO
+                        }
+                        else if (options.from && (!from_found && !readCursor.source.keyPath && !_.isEqual(options.from.attributes, cursor.value))) {
+                            // Using from, but not an index. This may be bad as the order is probably not guaranted.
+                            cursor.continue(); // We should rather advance to the right key TODO
                         }
                         else if (options.limit && processed >= options.limit) {
                             // Yet, we have processed enough elements. So, let's just skip.
@@ -260,7 +265,14 @@
                                 cursor.continue(); /* We need to 'terminate' the cursor cleany, by moving to the end */
                             }
                         }
-                        else if (options.to && options.to.id != cursor.value.id) {
+                        else if (options.to && options.to.attributes[readCursor.source.keyPath] >= [readCursor.source.keyPath]) {
+                            if (bounds) {
+                                cursor.continue(options.conditions[index.keyPath][1] + 1); /* We need to 'terminate' the cursor cleany, by moving to the end */
+                            } else {
+                                cursor.continue(); /* We need to 'terminate' the cursor cleany, by moving to the end */
+                            }
+                        } 
+                        else if (options.to && to_found) {
                             // // Yet, we have processed all elements before the to.
                             if (bounds) {
                                 cursor.continue(options.conditions[index.keyPath][1] + 1); /* We need to 'terminate' the cursor cleany, by moving to the end */
@@ -274,6 +286,10 @@
                         } else {
                             // This time, it looks like it's good!
                             processed++;
+                            from_found = true;
+                            if (options.to && !readCursor.source.keyPath && _.isEqual(options.to.attributes, cursor.value)) {
+                                to_found = true;
+                            }
                             if (options.addIndividually) {
                                 collection.add(cursor.value);
                             } else if (options.clear) {

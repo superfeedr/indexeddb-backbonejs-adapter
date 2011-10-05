@@ -102,6 +102,7 @@
         function nextTest() {
             var t = tests.shift();
             if (t) {
+                console.log(t[0]);
                 asyncTest(t[0], t[1]);
             }
         }
