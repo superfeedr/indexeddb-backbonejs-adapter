@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <script src="http://code.jquery.com/jquery-latest.js"></script>
-        <link rel="stylesheet" href="http://code.jquery.com/qunit/git/qunit.css" type="text/css" media="screen" />
-        <script type="text/javascript" src="http://code.jquery.com/qunit/git/qunit.js"></script>
+        <script src="../lib/jquery.js"></script>
+        <link rel="stylesheet" href="../lib/qunit.css" type="text/css" media="screen" />
+        <script type="text/javascript" src="../lib/qunit.js"></script>
         <!-- Dependencies -->
-        <script src="http://documentcloud.github.com/underscore/underscore-min.js" type="text/javascript"></script>
-        <script src="https://github.com/documentcloud/backbone/raw/master/backbone.js" type="text/javascript"></script>
+        <script src="../lib/underscore-min.js" type="text/javascript"></script>
+        <script src="../lib/backbone.js" type="text/javascript"></script>
         <script src="../backbone-indexeddb.js" type="text/javascript"></script>
         <script>
         var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
@@ -108,60 +108,60 @@
 
         var tests = [
             ["create model", function () {
-                var movie = new Movie();
-                movie.save({
-                    title: "The Matrix",
-                    format: "dvd"
-                }, {
-                    success: function () {
-                        start();
-                        equals(true, true, "The movie should be saved successfully");
-                        nextTest();
-                    },
-                    error: function (o, error) {
-                        start();
-                        if (window.console && window.console.log) window.console.log(error);
-                        equals(true, false, error.error.target.webkitErrorMessage);
-                        nextTest();
-                    }
-                });
-            }],
-            ["read model with id", function () {
-                var movie = new Movie();
-                movie.save({
-                    title: "Avatar",
-                    format: "blue-ray"
-                }, {
-                    success: function () {
-                        // Ok, now we need to create a new movie object and retrieve it
-                        var saved = new Movie({
-                            id: movie.id
-                        });
-                        saved.fetch({
-                            success: function (object) {
-                                // success
-                                start();
-                                equals(saved.toJSON().title, movie.toJSON().title, "The movie should have the right title");
-                                equals(saved.toJSON().format, movie.toJSON().format, "The movie should have the right format");
-                                equals(object.toJSON().title, movie.toJSON().title, "The movie should have the right title");
-                                equals(object.toJSON().format, movie.toJSON().format, "The movie should have the right format");
-                                nextTest();
-                            },
-                            error: function (object, error) {
-                                start();
-                                equals(true, false, error);
-                                nextTest();
-                                // Failure
-                            }
-                        });
-                    },
-                    error: function (o, error) {
-                        start();
-                        equals(true, false, error.error.target.webkitErrorMessage);
-                        nextTest();
-                    }
-                });
-            }],
+                 var movie = new Movie();
+                 movie.save({
+                     title: "The Matrix",
+                     format: "dvd"
+                 }, {
+                     success: function () {
+                         start();
+                         equals(true, true, "The movie should be saved successfully");
+                         nextTest();
+                     },
+                     error: function (o, error) {
+                         start();
+                         if (window.console && window.console.log) window.console.log(error);
+                         equals(true, false, error.error.target.webkitErrorMessage);
+                         nextTest();
+                     }
+                 });
+             }],
+             ["read model with id", function () {
+                 var movie = new Movie();
+                 movie.save({
+                     title: "Avatar",
+                     format: "blue-ray"
+                 }, {
+                     success: function () {
+                         // Ok, now we need to create a new movie object and retrieve it
+                         var saved = new Movie({
+                             id: movie.id
+                         });
+                         saved.fetch({
+                             success: function (object) {
+                                 // success
+                                 start();
+                                 equals(saved.toJSON().title, movie.toJSON().title, "The movie should have the right title");
+                                 equals(saved.toJSON().format, movie.toJSON().format, "The movie should have the right format");
+                                 equals(object.toJSON().title, movie.toJSON().title, "The movie should have the right title");
+                                 equals(object.toJSON().format, movie.toJSON().format, "The movie should have the right format");
+                                 nextTest();
+                             },
+                             error: function (object, error) {
+                                 start();
+                                 equals(true, false, error);
+                                 nextTest();
+                                 // Failure
+                             }
+                         });
+                     },
+                     error: function (o, error) {
+                         start();
+                         equals(true, false, error.error.target.webkitErrorMessage);
+                         nextTest();
+                     }
+                 });
+             }],
             ["read model with index", function () {
 
                 function saveMovieAndReadWithIndex(movie) {
@@ -170,11 +170,10 @@
                             // Ok, now we need to create a new movie object and retrieve it
                             var movie2 = new Movie({
                                 title: "Avatar",
-                                apple: "orange",
-                                version: "three"
                             });
                             movie2.fetch({
                                 success: function (object) {
+                                    console.log("FOUND! SUCCESS");
                                     // success
                                     start();
                                     equals(movie2.toJSON().title, movie.toJSON().title, "The movie should have the right title");
@@ -198,7 +197,6 @@
 
                 var movie = new Movie({
                     title: "Avatar",
-                    format: "blue-ray"
                 });
                 movie.fetch({
                     success: function () {
@@ -209,6 +207,7 @@
                         });
                     },
                     error: function () {
+                        console.log("NOT FOUND");
                         saveMovieAndReadWithIndex(movie);
                     }
                 });
@@ -779,7 +778,69 @@
         ];
 
         // Let's go run the tests
+        
         nextTest(tests);
+        
+        
+        // First, let's see the content of the database... because I'm little worried about it!
+        // var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
+        // var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction; // No prefix in moz
+        // 
+        // var dbRequest = indexedDB.open(database.id, "");
+        // 
+        // var db = null;
+        // var cycles = 0;
+        // 
+        // var all = [];
+        // 
+        // dbRequest.onsuccess = function (e) {
+        //     db = e.target.result; // Attach the connection ot the queue.
+        //     var readTransaction = db.transaction(["movies"], IDBTransaction.READ_ONLY);
+        //     var store = readTransaction.objectStore("movies");
+        // 
+        //     var index = store.index("titleIndex");
+        //     var readCursor = index.openCursor();
+        // 
+        //     readCursor.onsuccess = function (e) {
+        //         var cursor = e.target.result;
+        //         if (!cursor) {
+        //             var done = _.after(all.length + 1, function(){
+        //                 console.log("----- END OF DEBUG -----");
+        //                 nextTest(tests);
+        //             }) 
+        //             done();
+        //             _.each(all, function (obj, index) {
+        //                 console.log("Deleting : " + JSON.stringify(obj));
+        //                 
+        //                 var deleteTransaction = db.transaction(["movies"], IDBTransaction.READ_WRITE);
+        //                 var store = deleteTransaction.objectStore("movies");
+        // 
+        //                 var deleteRequest = store.delete(obj.id);
+        //                 deleteRequest.onsuccess = function (event) {
+        //                     console.log("OK. ONE LESS");
+        //                     done();
+        //                     
+        //                     
+        //                 };
+        //                 deleteRequest.onerror = function (event) {
+        //                     console.log("FUCK")
+        //                 };
+        //             });
+        //         }
+        //         else {
+        //             all.push(cursor.value);
+        //             cursor.continue(); 
+        //         }
+        //     };
+        // }
+        // dbRequest.onerror = function (e) {
+        //     console.error("Couldn't not connect to the database");
+        // };
+        // 
+        // dbRequest.onabort = function (e) {
+        //     console.error("Connection to the database aborted");
+        // };
+        // 
         </script>
     </head>
     
