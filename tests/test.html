@@ -107,71 +107,70 @@
         }
 
         var tests = [
-            ["create model", function () {
-                var movie = new Movie();
-                movie.save({
-                    title: "The Matrix",
-                    format: "dvd"
-                }, {
-                    success: function () {
-                        start();
-                        equals(true, true, "The movie should be saved successfully");
-                        nextTest();
-                    },
-                    error: function (o, error) {
-                        start();
-                        if (window.console && window.console.log) window.console.log(error);
-                        equals(true, false, error.error.target.webkitErrorMessage);
-                        nextTest();
-                    }
-                });
-            }],
-            ["read model with id", function () {
-                var movie = new Movie();
-                movie.save({
-                    title: "Avatar",
-                    format: "blue-ray"
-                }, {
-                    success: function () {
-                        // Ok, now we need to create a new movie object and retrieve it
-                        var saved = new Movie({
-                            id: movie.id
-                        });
-                        saved.fetch({
-                            success: function (object) {
-                                // success
-                                start();
-                                equals(saved.toJSON().title, movie.toJSON().title, "The movie should have the right title");
-                                equals(saved.toJSON().format, movie.toJSON().format, "The movie should have the right format");
-                                equals(object.toJSON().title, movie.toJSON().title, "The movie should have the right title");
-                                equals(object.toJSON().format, movie.toJSON().format, "The movie should have the right format");
-                                nextTest();
-                            },
-                            error: function (object, error) {
-                                start();
-                                equals(true, false, error);
-                                nextTest();
-                                // Failure
-                            }
-                        });
-                    },
-                    error: function (o, error) {
-                        start();
-                        equals(true, false, error.error.target.webkitErrorMessage);
-                        nextTest();
-                    }
-                });
-            }],
-            ["read model with index", function () {
+            // ["create model", function () {
+            //      var movie = new Movie();
+            //      movie.save({
+            //          title: "The Matrix",
+            //          format: "dvd"
+            //      }, {
+            //          success: function () {
+            //              start();
+            //              equals(true, true, "The movie should be saved successfully");
+            //              nextTest();
+            //          },
+            //          error: function (o, error) {
+            //              start();
+            //              if (window.console && window.console.log) window.console.log(error);
+            //              equals(true, false, error.error.target.webkitErrorMessage);
+            //              nextTest();
+            //          }
+            //      });
+            //  }],
+            //  ["read model with id", function () {
+            //      var movie = new Movie();
+            //      movie.save({
+            //          title: "Avatar",
+            //          format: "blue-ray"
+            //      }, {
+            //          success: function () {
+            //              // Ok, now we need to create a new movie object and retrieve it
+            //              var saved = new Movie({
+            //                  id: movie.id
+            //              });
+            //              saved.fetch({
+            //                  success: function (object) {
+            //                      // success
+            //                      start();
+            //                      equals(saved.toJSON().title, movie.toJSON().title, "The movie should have the right title");
+            //                      equals(saved.toJSON().format, movie.toJSON().format, "The movie should have the right format");
+            //                      equals(object.toJSON().title, movie.toJSON().title, "The movie should have the right title");
+            //                      equals(object.toJSON().format, movie.toJSON().format, "The movie should have the right format");
+            //                      nextTest();
+            //                  },
+            //                  error: function (object, error) {
+            //                      start();
+            //                      equals(true, false, error);
+            //                      nextTest();
+            //                      // Failure
+            //                  }
+            //              });
+            //          },
+            //          error: function (o, error) {
+            //              start();
+            //              equals(true, false, error.error.target.webkitErrorMessage);
+            //              nextTest();
+            //          }
+            //      });
+            //  }],
+             ["read model with index", function () {
 
                 function saveMovieAndReadWithIndex(movie) {
-                    movie.save({}, {
+                    movie.save({
                         success: function () {
+                            console.log("NOW IT SHOULD B HERE")
                             // Ok, now we need to create a new movie object and retrieve it
                             var movie2 = new Movie({
-                                title: "Avatar",
-                                apple: "orange",
-                                version: "three"
+                                title: "Live and Become",
                             });
                             movie2.fetch({
                                 success: function (object) {
@@ -184,21 +183,20 @@
                                 error: function (object, error) {
                                     start();
                                     equals(true, false, error);
-                                    nextTest();
+                                    // nextTest();
                                 }
                             });
                         },
                         error: function (o, error) {
                             start();
                             equals(true, false, error.error.target.webkitErrorMessage);
-                            nextTest();
+                            // nextTest();
                         }
                     });
                 }
 
                 var movie = new Movie({
-                    title: "Avatar",
-                    format: "blue-ray"
+                    title: "Live and Become"
                 });
                 movie.fetch({
                     success: function () {
@@ -209,12 +207,11 @@
                         });
                     },
                     error: function () {
+                        // Fine, the object is not here.
+                        console.log("OK PROCEED")
                         saveMovieAndReadWithIndex(movie);
                     }
                 });
-
-
-
             }],
             ["read model that do not exist with index", function () {
                 var movie = new Movie({
