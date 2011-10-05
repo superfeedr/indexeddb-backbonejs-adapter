@@ -109,7 +109,6 @@
         // Writes the json to the storeName in db.
         // options are just success and error callbacks.
         write: function (db, storeName, object, options) {
-            console.log("WRITING")
             var writeTransaction = db.transaction([storeName], IDBTransaction.READ_WRITE, 0);
             var store = writeTransaction.objectStore(storeName);
             var json = object.toJSON();
@@ -131,51 +130,34 @@
             var readTransaction = db.transaction([storeName], IDBTransaction.READ_ONLY);
             var store = readTransaction.objectStore(storeName);
             var json = object.toJSON();
-            
-            
+
+
             var getRequest = null;
             if (json.id) {
                 getRequest = store.get(json.id);
             } else {
                 // We need to find which index we have
-                _.each(store.indexNames, function (key, i) {
-                    if(!getRequest) {
-                        index = store.index(key);
-                        var readCursor = index.openCursor();
-                        readCursor.onsuccess = function (e) {
-                            var cursor = e.target.result;
-                            if (!cursor) {
-                                console.log("NO MORE!")
-                                if (json[index.keyPath] ) {
-                                    getRequest = index.get(json[index.keyPath]);
-                                }
-                                if (getRequest) {
-                                    getRequest.onsuccess = function (event) {
-                                        if (event.target.result) {
-                                            options.success(event.target.result);
-                                        } else {
-                                            options.error("Not Found");
-                                        }
-                                    };
-                                    getRequest.onerror = function (error) {
-                                        options.error("Not Found"); // We couldn't find the record.
-                                    }
-                                } else {
-                                    options.error("Not Found, no Index"); // We couldn't even look for it, as we don't have enough data.
-                                }
-                                
-                            }
-                            else {
-                                console.log("ITEM!");
-                                console.log(cursor.value);
-                                cursor.continue(); 
-                            }
-                            
-                        }
+                _.each(store.indexNames, function (key, index) {
+                    index = store.index(key);
+                    if (json[index.keyPath] && !getRequest) {
+                        getRequest = index.get(json[index.keyPath]);
                     }
                 });
             }
-            
+            if (getRequest) {
+                getRequest.onsuccess = function (event) {
+                    if (event.target.result) {
+                        options.success(event.target.result);
+                    } else {
+                        options.error("Not Found");
+                    }
+                };
+                getRequest.onerror = function () {
+                    options.error("Not Found"); // We couldn't find the record.
+                }
+            } else {
+                options.error("Not Found"); // We couldn't even look for it, as we don't have enough data.
+            }
         },
 
         // Deletes the json.id key and value in storeName from db.
