@@ -200,7 +200,8 @@
                         if (options.conditions[index.keyPath] instanceof Array) {
                             lower = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][1] : options.conditions[index.keyPath][0];
                             upper = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][0] : options.conditions[index.keyPath][1];
-                            bounds = IDBKeyRange.bound(lower, upper);
+                            bounds = IDBKeyRange.bound(lower, upper, true, true);
+                            
                             if (options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1]) {
                                 // Looks like we want the DESC order
                                 readCursor = index.openCursor(bounds, 2);
