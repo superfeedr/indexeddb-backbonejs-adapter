@@ -3,7 +3,7 @@ This is an [IndexedDB](http://www.w3.org/TR/IndexedDB/) adapter for [Backbone.js
 # Warnings
 
 This is a very very very first attempt. It was tested with Google Chrome 11 and Firefox Nightly 6.0 Alpha 1.
-It also requires the current development version of BackboneJS ([branch 0.5.0-pre](https://github.com/documentcloud/backbone/raw/master/backbone.js)).
+It also requires the latest version of BackboneJS ([0.5.3](https://github.com/documentcloud/backbone)).
 
 *It lacks a lot of documentation, so it's good idea to look at the tests if you're interested in using it.*
 
@@ -80,7 +80,7 @@ For example, in your traditional backbone apps, you would do something like :
 
 	var movie = new Movie({id: "123"})
 	movie.fetch()
-	
+
 to fetch from the remote server the Movie with the id `123`. This is convenient when you know the id. With this adapter, you can do something like
 
 	var movie = new Movie({title: "Avatar"})
@@ -104,7 +104,7 @@ First, you can `limit` and `offset` the number of items that are being fetched b
 	});
 
 You can also *provide a range* applied to the id.
-	
+
 	var theater = new Theater() // Theater is a collection of movies
 	theater.fetch({
 		range: ["a", "b"],
@@ -129,10 +129,10 @@ You can also *get all items for which an indexed value is comprised between 2 va
 	theater.fetch({
 		conditions: {genre: ["a", "e"]},
 		success: function() {
-			// The theater collection will be populated with all the movies whose genre is "adventure", "comic", "drama", but not "thriller". 
+			// The theater collection will be populated with all the movies whose genre is "adventure", "comic", "drama", but not "thriller".
 		}
 	});
-	
+
 You can also *get all items after a certain object (excluding that object), or from a certain object (including) to a certain object (including)* (using their ids). This combined with the addIndividually option allows you to lazy load a full collection, by always loading the next element.
 
     	var theater = new Theater() // Theater is a collection of movies
@@ -141,12 +141,10 @@ You can also *get all items after a certain object (excluding that object), or f
     		after: new Movie({id: 12345, ...}),
     		to: new Movie({id: 12345, ...}),
     		success: function() {
-    			// The theater collection will be populated with all the movies whose genre is "adventure", "comic", "drama", but not "thriller". 
+    			// The theater collection will be populated with all the movies whose genre is "adventure", "comic", "drama", but not "thriller".
     		}
     	});
 
 
 You can also obviously combine all these.
-
-
 
