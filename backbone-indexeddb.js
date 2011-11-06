@@ -109,7 +109,7 @@
         // Writes the json to the storeName in db.
         // options are just success and error callbacks.
         write: function (db, storeName, object, options) {
-            var writeTransaction = db.transaction([storeName], IDBTransaction.READ_WRITE, 0);
+            var writeTransaction = db.transaction([storeName], IDBTransaction.READ_WRITE);
             var store = writeTransaction.objectStore(storeName);
             var json = object.toJSON();
 
@@ -184,7 +184,7 @@
         query: function (db, storeName, collection, options) {
             var elements = [];
             var skipped = 0, processed = 0;
-            var queryTransaction = db.transaction([storeName], IDBTransaction.READ_WRITE);
+            var queryTransaction = db.transaction([storeName], IDBTransaction.READ_ONLY);
             var readCursor = null;
             var store = queryTransaction.objectStore(storeName);
             var index = null,
@@ -262,6 +262,7 @@
                         } else {
                             // This time, it looks like it's good!
                             processed++;
+                            cursor.continue(); 
                             if (options.addIndividually) {
                                 collection.add(cursor.value);
                             } else if (options.clear) {
@@ -276,7 +277,6 @@
                             } else {
                                 elements.push(cursor.value);
                             }
-                            cursor.continue(); 
                         }
                     }
                 };
