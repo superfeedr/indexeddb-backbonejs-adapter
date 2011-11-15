@@ -21,9 +21,60 @@
     } else if(window.mozIndexedDB) {
         mozIndexedDB.prototype._continue = mozIndexedDB.prototype.continue;
     }
-    
+
     // Driver object
-    function Driver() {}
+    function Driver(schema, ready) {
+        this.schema = schema;
+        this.ready = ready;
+        window.onbeforeunload = function() { 
+            // db.close(); 
+            chrome.extension.sendRequest({ signature: "debug", params: {message: "DIE"}}, function (response) {});
+            // this.transactions.forEach(function(trans) { 
+            //     chrome.extension.sendRequest({ signature: "debug", params: {message: "abort"}}, function (response) {});
+            //     trans.abort(); 
+            // });
+            // this.connection.close(); 
+            
+        }
+        // Used to list all transactions
+        this.transactions = [];
+        this.db = null;
+        this.dbRequest  = indexedDB.open(this.schema.id, this.schema.description || "");
+        this.error = null;
+
+        this.dbRequest.onsuccess = function (e) {
+            this.db = e.target.result; // Attach the connection ot the queue. 
+            
+            if (this.db.version === _.last(this.schema.migrations).version) {
+                // No migration to perform!
+                this.ready();
+            } else if (this.connection.version < _.last(this.schema.migrations).version) {
+                // We need to migrate up to the current migration defined in the database
+                this.migrate(this.connection, this.schema.migrations, this.connection.version, {
+                    success: function () {
+                        this.ready();
+                    }.bind(this),
+                    error: function () {
+                        this.error = "Database not up to date. " + this.connection.version + " expected was " + _.last(this.schema.migrations).version;
+                    }.bind(this)
+                });
+            } else {
+                // Looks like the IndexedDB is at a higher version than the current driver schema.
+                this.error = "Database version is greater than current code " + this.connection.version + " expected was " + _.last(this.schema.migrations).version;
+            }
+        }.bind(this);
+
+        this.dbRequest.onerror = function (e) {
+            // Failed to open the database
+            this.error = "Couldn't not connect to the database"
+        }.bind(this);
+
+        this.dbRequest.onabort = function (e) {
+            // Failed to open the database
+            this.error = "Connection to the database aborted"
+        }.bind(this);
+        
+    }
 
     function debug_log(str) {
         if (typeof window.console !== "undefined" && typeof window.console.log !== "undefined") {
@@ -34,46 +85,61 @@
     // Driver Prototype
     Driver.prototype = {
 
+        // Tracks transactions. 
+        _track_transaction: function(transaction) {
+            this.transactions.push(transaction);
+            function removeIt() {
+                var idx = this.transactions.indexOf(transaction);
+                if (idx !== -1) {this.transactions.splice(idx); }
+            };
+            transaction.oncomplete = removeIt.bind(this);
+            transaction.onabort = removeIt.bind(this);
+            transaction.onerror = removeIt.bind(this);
+        },
+
         // Performs all the migrations to reach the right version of the database
-        migrate: function (db, migrations, version, options) {
+        migrate: function (migrations, version, options) {
             debug_log("Starting migrations from " + version);
-            this._migrate_next(db, migrations, version, options);
+            this._migrate_next(migrations, version, options);
         },
 
         // Performs the next migrations. This method is private and should probably not be called.
-        _migrate_next: function (db, migrations, version, options) {
+        _migrate_next: function (migrations, version, options) {
             var that = this;
             var migration = migrations.shift();
             if (migration) {
                 if (!version || version < migration.version) {
                     // We need to apply this migration-
                     if (typeof migration.before == "undefined") {
-                        migration.before = function (db, next) {
+                        migration.before = function (next) {
                             next();
                         };
                     }
                     if (typeof migration.after == "undefined") {
-                        migration.after = function (db, next) {
+                        migration.after = function (next) {
                             next();
                         };
                     }
                     // First, let's run the before script
-                    migration.before(db, function () {
-                        var versionRequest = db.setVersion(migration.version);
+                    migration.before(function () {
+                        var versionRequest = this.db.setVersion(migration.version);
                         versionRequest.onsuccess = function (e) {
-                            migration.migrate(db, versionRequest, function () {
+                            var transaction = versionRequest.result;
+                            this._track_transaction(transaction);
+                            
+                            migration.migrate(versionRequest, function () {
                                 // Migration successfully appliedn let's go to the next one!
-                                migration.after(db, function () {
+                                migration.after(function () {
                                     debug_log("Migrated to " + migration.version);
-                                    that._migrate_next(db, migrations, version, options);
+                                    that._migrate_next(migrations, version, options);
                                 });
                             });
-                        };
-                    });
+                        }.bind(this);
+                    }.bind(this));
                 } else {
                     // No need to apply this migration
                     debug_log("Skipping migration " + migration.version);
-                    this._migrate_next(db, migrations, version, options);
+                    this._migrate_next(migrations, version, options);
                 }
             } else {
                 debug_log("Done migrating");
@@ -83,23 +149,23 @@
         },
 
         /* This is the main method. */
-        execute: function (db, storeName, method, object, options) {
+        execute: function (storeName, method, object, options) {
             switch (method) {
             case "create":
-                this.write(db, storeName, object, options);
+                this.write(storeName, object, options);
                 break;
             case "read":
                 if (object instanceof Backbone.Collection) {
-                    this.query(db, storeName, object, options); // It's a collection
+                    this.query(storeName, object, options); // It's a collection
                 } else {
-                    this.read(db, storeName, object, options); // It's a Model
+                    this.read(storeName, object, options); // It's a Model
                 }
                 break;
             case "update":
-                this.write(db, storeName, object, options); // We may want to check that this is not a collection
+                this.write(storeName, object, options); // We may want to check that this is not a collection
                 break;
             case "delete":
-                this.delete(db, storeName, object, options); // We may want to check that this is not a collection
+                this.delete(storeName, object, options); // We may want to check that this is not a collection
                 break;
             default:
                 // Hum what?
@@ -108,8 +174,9 @@
 
         // Writes the json to the storeName in db.
         // options are just success and error callbacks.
-        write: function (db, storeName, object, options) {
-            var writeTransaction = db.transaction([storeName], IDBTransaction.READ_WRITE);
+        write: function (storeName, object, options) {
+            var writeTransaction = this.db.transaction([storeName], IDBTransaction.READ_WRITE);
+            this._track_transaction(writeTransaction);
             var store = writeTransaction.objectStore(storeName);
             var json = object.toJSON();
 
@@ -126,8 +193,10 @@
         },
 
         // Reads from storeName in db with json.id if it's there of with any json.xxxx as long as xxx is an index in storeName 
-        read: function (db, storeName, object, options) {
-            var readTransaction = db.transaction([storeName], IDBTransaction.READ_ONLY);
+        read: function (storeName, object, options) {
+            var readTransaction = this.db.transaction([storeName], IDBTransaction.READ_ONLY);
+            this._track_transaction(readTransaction);
+            
             var store = readTransaction.objectStore(storeName);
             var json = object.toJSON();
 
@@ -161,8 +230,10 @@
         },
 
         // Deletes the json.id key and value in storeName from db.
-        delete: function (db, storeName, object, options) {
-            var deleteTransaction = db.transaction([storeName], IDBTransaction.READ_WRITE);
+        delete: function (storeName, object, options) {
+            var deleteTransaction = this.db.transaction([storeName], IDBTransaction.READ_WRITE);
+            this._track_transaction(deleteTransaction);
+            
             var store = deleteTransaction.objectStore(storeName);
             var json = object.toJSON();
 
@@ -181,10 +252,12 @@
         // - range : range for the primary key
         // - limit : max number of elements to be yielded
         // - offset : skipped items.
-        query: function (db, storeName, collection, options) {
+        query: function (storeName, collection, options) {
             var elements = [];
             var skipped = 0, processed = 0;
-            var queryTransaction = db.transaction([storeName], IDBTransaction.READ_ONLY);
+            var queryTransaction = this.db.transaction([storeName], IDBTransaction.READ_ONLY);
+            this._track_transaction(queryTransaction);
+            
             var readCursor = null;
             var store = queryTransaction.objectStore(storeName);
             var index = null,
@@ -289,47 +362,10 @@
     var Connections = {};
 
     // ExecutionQueue object
-    function ExecutionQueue(driver, database) {
-        this.driver = driver;
-        this.database = database
-        this.started = false;
-        this.stack = [];
-        this.connection = null;
-        this.dbRequest = indexedDB.open(database.id, database.description || "");
-        this.error = null;
-
-        this.dbRequest.onsuccess = function (e) {
-            this.connection = e.target.result; // Attach the connection ot the queue.
-            if (this.connection.version === _.last(database.migrations).version) {
-                // No migration to perform!
-                this.ready();
-            } else if (this.connection.version < _.last(database.migrations).version) {
-                // We need to migrate up to the current migration defined in the database
-                driver.migrate(this.connection, database.migrations, this.connection.version, {
-                    success: function () {
-                        this.ready();
-                    }.bind(this),
-                    error: function () {
-                        this.error = "Database not up to date. " + this.connection.version + " expected was " + _.last(database.migrations).version;
-                    }.bind(this)
-                });
-            } else {
-                // Looks like the IndexedDB is at a higher version than the current database.
-                this.error = "Database version is greater than current code " + this.connection.version + " expected was " + _.last(database.migrations).version;
-            }
-        }.bind(this);
-
-        this.dbRequest.onerror = function (e) {
-            // Failed to open the database
-            this.error = "Couldn't not connect to the database"
-        }.bind(this);
-
-        this.dbRequest.onabort = function (e) {
-            // Failed to open the database
-            this.error = "Connection to the database aborted"
-        }.bind(this);
-
-
+    function ExecutionQueue(schema) {
+        this.driver     = new Driver(schema, this.ready.bind(this));
+        this.started    = false;
+        this.stack      = [];
     }
 
     // ExecutionQueue Prototype
@@ -347,7 +383,7 @@
                 message[2].error(this.error);
             } else {
                 if (this.started) {
-                    this.driver.execute(this.connection, message[1].storeName, message[0], message[1], message[2]); // Upon messages, we execute the query
+                    this.driver.execute(message[1].storeName, message[0], message[1], message[2]); // Upon messages, we execute the query
                 } else {
                     this.stack.push(message);
                 }
@@ -357,12 +393,10 @@
     };
 
     Backbone.sync = function (method, object, options) {
-        var database = object.database;
-        var driver = new Driver();
-
-        if (!Connections[database.id]) {
-            Connections[database.id] = new ExecutionQueue(driver, database);
+        var schema = object.database;
+        if (!Connections[schema.id]) {
+            Connections[schema.id] = new ExecutionQueue(schema);
         }
-        Connections[database.id].execute([method, object, options]);
+        Connections[schema.id].execute([method, object, options]);
     };
 })();
