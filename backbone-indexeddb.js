@@ -79,7 +79,6 @@
             // Failed to open the database
             this.error = "Connection to the database aborted"
         }.bind(this);
-        
     }
 
     function debug_log(str) {
@@ -91,7 +90,7 @@
     // Driver Prototype
     Driver.prototype = {
 
-        // Tracks transactions. 
+        // Tracks transactions. Mostly for debugging purposes. TO-IMPROVE
         _track_transaction: function(transaction) {
             this.transactions.push(transaction);
             function removeIt() {
@@ -103,7 +102,7 @@
             transaction.onerror = removeIt.bind(this);
         },
 
-        // Performs all the migrations to reach the right version of the database
+        // Performs all the migrations to reach the right version of the database.
         migrate: function (migrations, version, options) {
             debug_log("Starting migrations from " + version);
             this._migrate_next(migrations, version, options);
@@ -154,7 +153,7 @@
             }
         },
 
-        /* This is the main method. */
+        // This is the main method, called by the ExecutionQueue when the driver is ready (database open and migration performed)
         execute: function (storeName, method, object, options) {
             switch (method) {
             case "create":
@@ -164,14 +163,14 @@
                 if (object instanceof Backbone.Collection) {
                     this.query(storeName, object, options); // It's a collection
                 } else {
-                    this.read(storeName, object, options); // It's a Model
+                    this.read(storeName, object, options); // It's a model
                 }
                 break;
             case "update":
-                this.write(storeName, object, options); // We may want to check that this is not a collection
+                this.write(storeName, object, options); // We may want to check that this is not a collection. TOFIX
                 break;
             case "delete":
-                this.delete(storeName, object, options); // We may want to check that this is not a collection
+                this.delete(storeName, object, options); // We may want to check that this is not a collection. TOFIX
                 break;
             default:
                 // Hum what?
