@@ -9,6 +9,7 @@
         return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
     }
 
+    // Naming is a mess!
     var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
     var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction; // No prefix in moz
     var IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange; // No prefix in moz
@@ -23,9 +24,18 @@
     }
 
     // Driver object
+    // That's the interesting part.
+    // There is a driver for each schema provided. The schema is a te combination of name (for the database), a version as well as migrations to reach that 
+    // version of the database.
     function Driver(schema, ready) {
-        this.schema = schema;
-        this.ready = ready;
+        this.schema         = schema;
+        this.ready          = ready;
+        this.error          = null;
+        this.transactions   = []; // Used to list all transactions and keep track of active ones.
+        this.db             = null;
+        this.dbRequest      = indexedDB.open(this.schema.id, this.schema.description || "");
+        
+        /* DEBUG PURPOSES */
         window.onbeforeunload = function() { 
             // db.close(); 
             chrome.extension.sendRequest({ signature: "debug", params: {message: "DIE"}}, function (response) {});
@@ -36,12 +46,8 @@
             // this.connection.close(); 
             
         }
-        // Used to list all transactions
-        this.transactions = [];
-        this.db = null;
-        this.dbRequest  = indexedDB.open(this.schema.id, this.schema.description || "");
-        this.error = null;
-
+        /* DEBUG PURPOSES */
+        
         this.dbRequest.onsuccess = function (e) {
             this.db = e.target.result; // Attach the connection ot the queue. 
             
@@ -357,11 +363,9 @@
         }
     };
 
-
-    // Keeps track of the connections
-    var Connections = {};
-
     // ExecutionQueue object
+    // The execution queue is an abstraction to buffer up requests to the database.
+    // It holds a "driver". When the driver is ready, it just fires up the queue and executes in sync.
     function ExecutionQueue(schema) {
         this.driver     = new Driver(schema, this.ready.bind(this));
         this.started    = false;
@@ -370,7 +374,8 @@
 
     // ExecutionQueue Prototype
     ExecutionQueue.prototype = {
-
+        // Called when the driver is ready
+        // It just loops over the elements in the queue and executes them.
         ready: function () {
             this.started = true;
             _.each(this.stack, function (message) {
@@ -378,25 +383,28 @@
             }.bind(this));
         },
 
+        // Executes a given command on the driver. If not started, just stacks up one more element.
         execute: function (message) {
-            if (this.error) {
-                message[2].error(this.error);
+            if (this.started) {
+                this.driver.execute(message[1].storeName, message[0], message[1], message[2]); // Upon messages, we execute the query
             } else {
-                if (this.started) {
-                    this.driver.execute(message[1].storeName, message[0], message[1], message[2]); // Upon messages, we execute the query
-                } else {
-                    this.stack.push(message);
-                }
+                this.stack.push(message);
             }
         }
-
     };
 
+    // Method used by Backbone for sync of data with data store. It was initially designed to work with "server side" APIs, This wrapper makes 
+    // it work with the local indexedDB stuff. It uses the schema attribute provided by the object.
+    // The wrapper keeps an active Executuon Queue for each "schema", and executes querues agains it, based on the object type (collection or
+    // single model), but also the method... etc.
+    // Keeps track of the connections
+    var Databases = {};
+    
     Backbone.sync = function (method, object, options) {
         var schema = object.database;
-        if (!Connections[schema.id]) {
-            Connections[schema.id] = new ExecutionQueue(schema);
+        if (!Databases[schema.id]) {
+            Databases[schema.id] = new ExecutionQueue(schema);
         }
-        Connections[schema.id].execute([method, object, options]);
+        Databases[schema.id].execute([method, object, options]);
     };
 })();
