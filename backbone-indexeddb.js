@@ -35,19 +35,6 @@
         this.db             = null;
         this.dbRequest      = indexedDB.open(this.schema.id, this.schema.description || "");
         
-        /* DEBUG PURPOSES */
-        window.onbeforeunload = function() { 
-            // db.close(); 
-            chrome.extension.sendRequest({ signature: "debug", params: {message: "DIE"}}, function (response) {});
-            // this.transactions.forEach(function(trans) { 
-            //     chrome.extension.sendRequest({ signature: "debug", params: {message: "abort"}}, function (response) {});
-            //     trans.abort(); 
-            // });
-            // this.connection.close(); 
-            
-        }
-        /* DEBUG PURPOSES */
-        
         this.dbRequest.onsuccess = function (e) {
             this.db = e.target.result; // Attach the connection ot the queue. 
             
