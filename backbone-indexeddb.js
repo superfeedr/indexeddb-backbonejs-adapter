@@ -48,19 +48,19 @@
             if (this.db.version === _.last(this.schema.migrations).version) {
                 // No migration to perform!
                 this.ready();
-            } else if (this.connection.version < _.last(this.schema.migrations).version) {
+            } else if (this.db.version < _.last(this.schema.migrations).version) {
                 // We need to migrate up to the current migration defined in the database
-                this.migrate(this.connection, this.schema.migrations, this.connection.version, {
+                this.migrate(this.schema.migrations, this.db.version, {
                     success: function () {
                         this.ready();
                     }.bind(this),
                     error: function () {
-                        this.error = "Database not up to date. " + this.connection.version + " expected was " + _.last(this.schema.migrations).version;
+                        this.error = "Database not up to date. " + this.db.version + " expected was " + _.last(this.schema.migrations).version;
                     }.bind(this)
                 });
             } else {
                 // Looks like the IndexedDB is at a higher version than the current driver schema.
-                this.error = "Database version is greater than current code " + this.connection.version + " expected was " + _.last(this.schema.migrations).version;
+                this.error = "Database version is greater than current code " + this.db.version + " expected was " + _.last(this.schema.migrations).version;
             }
         }.bind(this);
 
@@ -127,7 +127,7 @@
                             var transaction = versionRequest.result;
                             this._track_transaction(transaction);
                             
-                            migration.migrate(versionRequest, function () {
+                            migration.migrate(this.db, versionRequest, function () {
                                 // Migration successfully appliedn let's go to the next one!
                                 migration.after(function () {
                                     debug_log("Migrated to " + migration.version);
