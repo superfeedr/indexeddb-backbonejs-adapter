@@ -19,8 +19,6 @@
          indexedDB.prototype._continue =  indexedDB.prototype.continue;
     } else if (window.webkitIDBRequest) {
         webkitIDBRequest.prototype._continue = webkitIDBRequest.prototype.continue;
-    } else if(window.mozIndexedDB) {
-        mozIndexedDB.prototype._continue = mozIndexedDB.prototype.continue;
     }
 
     // Driver object
