@@ -170,7 +170,7 @@
                         success: function () {
                             // Ok, now we need to create a new movie object and retrieve it
                             var movie2 = new Movie({
-                                title: "Avatar",
+                                title: "Avatar"
                             });
                             movie2.fetch({
                                 success: function (object) {
@@ -197,7 +197,7 @@
                 }
 
                 var movie = new Movie({
-                    title: "Avatar",
+                    title: "Avatar"
                 });
                 movie.fetch({
                     success: function () {
@@ -217,7 +217,7 @@
             }],
             ["read model that do not exist with index", function () {
                 var movie = new Movie({
-                    title: "Memento",
+                    title: "Memento"
                 });
                 movie.fetch({
                     success: function (object) {
