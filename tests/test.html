@@ -45,6 +45,38 @@
             model: Movie
         });
 
+        function deleteDB(dbObj) {
+            try {
+
+                var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB ;
+
+                var dbreq = indexedDB.deleteDatabase(dbObj.id);
+                dbreq.onsuccess = function (event) {
+                    var db = event.result;
+                    console.log("indexedDB: " + dbObj.id + " deleted");
+                }
+                dbreq.onerror = function (event) {
+                    console.error("indexedDB.delete Error: " + event.message);
+                }
+            }
+            catch (e) {
+                console.error("Error: " + e.message);
+                //prefer change id of database to start ont new instance
+                dbObj.id = dbObj.id + "." + guid();
+                console.log("fallback to new database name :" + dbObj.id)
+            }
+        }
+
+        // Generate four random hex digits.
+            function S4() {
+                return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+            }
+
+            // Generate a pseudo-GUID by concatenating random hexadecimal.
+            function guid() {
+                return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
+            }
+
         function addAllMovies(movies, done) {
             if (!movies) {
                 movies = [{
@@ -105,6 +137,8 @@
                 asyncTest(t[0], t[1]);
             }
         }
+
+        deleteDB(database);
 
         var tests = [
             ["create model", function () {
