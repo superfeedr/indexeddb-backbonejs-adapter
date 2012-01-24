@@ -331,8 +331,6 @@
                             cursor.continue(options.offset - skipped); /* We need to Moving the cursor forward */
                         } else {
                             // This time, it looks like it's good!
-                            processed++;
-                            cursor.continue(); 
                             if (options.addIndividually) {
                                 collection.add(cursor.value);
                             } else if (options.clear) {
@@ -347,6 +345,8 @@
                             } else {
                                 elements.push(cursor.value);
                             }
+                            processed++;
+                            cursor.continue();
                         }
                     }
                 };
