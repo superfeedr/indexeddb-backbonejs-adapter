@@ -21,6 +21,7 @@
         webkitIDBRequest.prototype._continue = webkitIDBRequest.prototype.continue;
     }
 
+    window.indexedDB = indexedDB;
     // Driver object
     // That's the interesting part.
     // There is a driver for each schema provided. The schema is a te combination of name (for the database), a version as well as migrations to reach that 
@@ -31,29 +32,48 @@
         this.error          = null;
         this.transactions   = []; // Used to list all transactions and keep track of active ones.
         this.db             = null;
-        this.dbRequest      = indexedDB.open(this.schema.id, this.schema.description || "");
-        
+
+        var lastMigrationPathVersion = _.last(this.schema.migrations).version;
+
+        this.dbRequest      = indexedDB.open(this.schema.id,lastMigrationPathVersion); //schema version need to be an unsigned long
+
+        this.launchMigrationPath = function(dbVersion) {
+            var clonedMigrations = _.clone(schema.migrations);
+            this.migrate(clonedMigrations, dbVersion, {
+                success: function () {
+                    this.ready();
+                }.bind(this),
+                error: function () {
+                    this.error = "Database not up to date. " + dbVersion + " expected was " + lastMigrationPathVersion;
+                }.bind(this)
+            });
+        };
+
+        this.dbRequest.onblocked = function(event){
+            debug_log("blocked");
+        }
+
         this.dbRequest.onsuccess = function (e) {
-            this.db = e.target.result; // Attach the connection ot the queue. 
-            
-            if (this.db.version === _.last(this.schema.migrations).version) {
-                // No migration to perform!
-                this.ready();
-            } else if (this.db.version < _.last(this.schema.migrations).version) {
-                // We need to migrate up to the current migration defined in the database
-                this.migrate(this.schema.migrations, this.db.version, {
-                    success: function () {
-                        this.ready();
-                    }.bind(this),
-                    error: function () {
-                        this.error = "Database not up to date. " + this.db.version + " expected was " + _.last(this.schema.migrations).version;
-                    }.bind(this)
-                });
-            } else {
-                // Looks like the IndexedDB is at a higher version than the current driver schema.
-                this.error = "Database version is greater than current code " + this.db.version + " expected was " + _.last(this.schema.migrations).version;
-            }
+            this.db = e.target.result; // Attach the connection ot the queue.
+
+            if(isOldVersionChangeSupport(this.db))
+            {
+                var currentIntDBVersion = (parseInt(this.db.version) ||  0); // we need convert beacuse chrome store in integer and ie10 DP4+ in int;
+
+                if (currentIntDBVersion === lastMigrationPathVersion) { //if support new event onupgradeneeded will trigger the ready function
+                    // No migration to perform!
+                    this.ready();
+                } else if (currentIntDBVersion < lastMigrationPathVersion ) {
+                    // We need to migrate up to the current migration defined in the database
+                    this.launchMigrationPath(this.db.version);
+                } else {
+                    // Looks like the IndexedDB is at a higher version than the current driver schema.
+                    this.error = "Database version is greater than current code " + this.db.version + " expected was " + lastMigrationPathVersion;
+                }
+            };
         }.bind(this);
+
+
 
         this.dbRequest.onerror = function (e) {
             // Failed to open the database
@@ -64,11 +84,37 @@
             // Failed to open the database
             this.error = "Connection to the database aborted"
         }.bind(this);
+
+        this.dbRequest.onupgradeneeded = function(iDBVersionChangeEvent){
+            this.db =iDBVersionChangeEvent.target.transaction.db;
+            debug_log(iDBVersionChangeEvent.oldVersion + ":" + iDBVersionChangeEvent.newVersion);
+            this.launchMigrationPath(iDBVersionChangeEvent.oldVersion);
+
+
+        }.bind(this);
     }
 
     function debug_log(str) {
         if (typeof window.console !== "undefined" && typeof window.console.log !== "undefined") {
             window.console.log(str);
+        }
+    }
+
+    function isOldVersionChangeSupport(db){
+        try
+        {
+        if(db.setVersion)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+        }
+        catch(e)
+        {
+            return false;
         }
     }
 
@@ -112,9 +158,8 @@
                     }
                     // First, let's run the before script
                     migration.before(function () {
-                        var versionRequest = this.db.setVersion(migration.version);
-                        versionRequest.onsuccess = function (e) {
-                            var transaction = versionRequest.result;
+                        var continueMigration = function (e) {
+                            var transaction = this.dbRequest.transaction || versionRequest.result;
 
                             //last modification occurred, need finish
                             if(migrations.length ==0) {
@@ -126,7 +171,7 @@
                                 }
                             }
 
-                            migration.migrate(this.db, versionRequest, function () {
+                            migration.migrate(transaction, function () {
                                 // Migration successfully appliedn let's go to the next one!
                                 migration.after(function () {
                                     debug_log("Migrated to " + migration.version);
@@ -134,6 +179,15 @@
                                 });
                             });
                         }.bind(this);
+
+                        if(isOldVersionChangeSupport(this.db)){
+                            var versionRequest = this.db.setVersion(migration.version);
+                            versionRequest.onsuccess = continueMigration;
+                        }
+                        else {
+                            continueMigration();
+                        }
+
                     }.bind(this));
                 } else {
                     // No need to apply this migration
@@ -145,6 +199,7 @@
 
         // This is the main method, called by the ExecutionQueue when the driver is ready (database open and migration performed)
         execute: function (storeName, method, object, options) {
+            debug_log("execute : " + method +  " on " + storeName)
             switch (method) {
             case "create":
                 this.write(storeName, object, options);
@@ -190,7 +245,7 @@
         // Reads from storeName in db with json.id if it's there of with any json.xxxx as long as xxx is an index in storeName 
         read: function (storeName, object, options) {
             var readTransaction = this.db.transaction([storeName], IDBTransaction.READ_ONLY);
-            //this._track_transaction(readTransaction);
+            this._track_transaction(readTransaction);
             
             var store = readTransaction.objectStore(storeName);
             var json = object.toJSON();
@@ -349,6 +404,11 @@
                     }
                 };
             }
+        },
+        close :function(){
+            if(this.db){
+                this.db.close()
+;            }
         }
     };
 
@@ -359,6 +419,7 @@
         this.driver     = new Driver(schema, this.ready.bind(this));
         this.started    = false;
         this.stack      = [];
+        this.version    = _.last(schema.migrations).version;
     }
 
     // ExecutionQueue Prototype
@@ -379,6 +440,10 @@
             } else {
                 this.stack.push(message);
             }
+        },
+
+        close : function(){
+            this.driver.close();
         }
     };
 
@@ -390,10 +455,29 @@
     var Databases = {};
     
     Backbone.sync = function (method, object, options) {
-        var schema = object.database;
-        if (!Databases[schema.id]) {
-            Databases[schema.id] = new ExecutionQueue(schema);
+
+        if(method=="closeall"){
+            _.each(Databases,function(database){
+                database.close();
+            });
+
+            return;
         }
+
+        var schema = object.database;
+        if (Databases[schema.id]) {
+            if(Databases[schema.id].version != _.last(schema.migrations).version){
+                Databases[schema.id].close();
+                delete Databases[schema.id];
+            }
+        }
+
+        if (!Databases[schema.id]) {
+                  Databases[schema.id] = new ExecutionQueue(schema);
+                }
+
         Databases[schema.id].execute([method, object, options]);
     };
+
+    //window.addEventListener("unload",function(){Backbone.sync("closeall")})
 })();
