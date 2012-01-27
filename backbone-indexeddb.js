@@ -65,10 +65,10 @@
                     this.ready();
                 } else if (currentIntDBVersion < lastMigrationPathVersion ) {
                     // We need to migrate up to the current migration defined in the database
-                    this.launchMigrationPath(this.db.version);
+                    this.launchMigrationPath(currentIntDBVersion);
                 } else {
                     // Looks like the IndexedDB is at a higher version than the current driver schema.
-                    this.error = "Database version is greater than current code " + this.db.version + " expected was " + lastMigrationPathVersion;
+                    this.error = "Database version is greater than current code " + currentIntDBVersion + " expected was " + lastMigrationPathVersion;
                 }
             };
         }.bind(this);
@@ -357,6 +357,9 @@
             if (typeof (readCursor) == "undefined" || !readCursor) {
                 options.error("No Cursor");
             } else {
+                readCursor.onerror = function(e){
+                    options.error("readCursor error", e);
+                };
                 // Setup a handler for the cursor’s `success` event:
                 readCursor.onsuccess = function (e) {
                     var cursor = e.target.result;
