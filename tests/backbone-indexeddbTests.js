@@ -6,7 +6,7 @@
  * To change this template use File | Settings | File Templates.
  */
 
-window.console = jstestdriver.console;
+//window.console = jstestdriver.console;
 
 var databasev1 = {
     id:"movies-database",
@@ -156,6 +156,100 @@ backboneIndexedDBTest.prototype.testCreateModelV2 = function (queue) {
                 {
                     success:onSuccess,
                     error:onError});
+        }
+    );
+};
+
+backboneIndexedDBTest.prototype.testCreateModelBeforeAndNext = function (queue) {
+
+    queue.call("Try create model with before and next", function (callbacks) {
+
+            var stepOnUpgrade = 1;
+
+            var databasev3 = {
+                id:"movies-database-beforeandnext",
+                description:"The database for the Movies",
+                migrations:[
+                    {
+                        version:1,
+                        migrate:function (transaction, next) {
+                            var store = transaction.db.createObjectStore("movies");
+                            next();
+                        }
+                    },
+                    {
+                        version:2,
+                        before : callbacks.add(function (next) {
+                            jstestdriver.console.log("before");
+                            jstestdriver.console.log("migration path step before #1");
+                            assertEquals("migration path step before", 1, stepOnUpgrade);
+                            stepOnUpgrade++;
+                            next();
+                        }),
+                        migrate:callbacks.add(function (transaction, next) {
+                            var store = undefined;
+                            if (!transaction.db.objectStoreNames.contains("movies")) {
+                                store = transaction.db.createObjectStore("movies");
+                            }
+                            store = transaction.objectStore("movies");
+                            store.createIndex("titleIndex", "title", {
+                                unique:false
+                            });
+                            store.createIndex("formatIndex", "format", {
+                                unique:false
+                            });
+                            jstestdriver.console.log("migration path step migrate #2");
+                            assertEquals("migration path step migrate", 2, stepOnUpgrade);
+                            stepOnUpgrade++;
+                            next();
+                        }),
+                        after : callbacks.add(function (next) {
+                            jstestdriver.console.log("after");
+                            var m = new MovieV3();
+                            m.save({
+                                title:"The Matrix 3",
+                                format:"dvd"
+                            }, {
+                                success: callbacks.add(function(){
+                                    jstestdriver.console.log("migration path step save #4");
+                                    assertEquals("migration path step save", 4, stepOnUpgrade);
+                                    stepOnUpgrade++;
+                                })
+                            });
+                            jstestdriver.console.log("migration path step after #3");
+                            assertEquals("migration path step after", 3, stepOnUpgrade);
+                            stepOnUpgrade++;
+                            next();
+                        })
+                    }
+                ]
+            };
+
+            deleteDB(databasev3);
+
+            var MovieV3 = Backbone.Model.extend({
+                database:databasev3,
+                storeName:"movies"
+            });
+
+
+
+            var onSuccess = callbacks.add(function () {
+                jstestdriver.console.log("get model v3 Success");
+                jstestdriver.console.log("migration path step is 5 #5");
+                assertEquals("migration path step is 5", 5, stepOnUpgrade);
+            });
+
+            var onError = callbacks.addErrback(function () {
+                jstestdriver.console.log("migration path step is 5 #5");
+                jstestdriver.console.log("get model v3 Error");
+            });
+
+
+            var movie = new MovieV3({title:"The Matrix 3"});
+            movie.fetch({
+                success:onSuccess,
+                error:onError});
         }
     );
 };
@@ -438,56 +532,56 @@ backboneIndexedDBTest.prototype.testReadCollection = function (queue) {
 
     queue.call("Try read collection with limit", function (callbacks) {
 
-                var onSuccess = callbacks.add(function () {
-                    assertEquals("Should have 3 elements",3, theater.models.length);
-                    assertEquals("Should have [\"Hello\", \"Bonjour\", \"Halo\"]", ["Hello", "Bonjour", "Halo"], theater.pluck("title"));
-                });
+            var onSuccess = callbacks.add(function () {
+                assertEquals("Should have 3 elements", 3, theater.models.length);
+                assertEquals("Should have [\"Hello\", \"Bonjour\", \"Halo\"]", ["Hello", "Bonjour", "Halo"], theater.pluck("title"));
+            });
 
-                var onError = callbacks.addErrback(function () {
-                    jstestdriver.console.log("create model v2 Error");
-                });
+            var onError = callbacks.addErrback(function () {
+                jstestdriver.console.log("create model v2 Error");
+            });
 
-                theater.fetch({
-                    limit : 3,
-                    success:onSuccess,
-                    error:onError});
-            }
-        );
+            theater.fetch({
+                limit:3,
+                success:onSuccess,
+                error:onError});
+        }
+    );
 
     queue.call("Try read collection with offset", function (callbacks) {
 
-                var onSuccess = callbacks.add(function () {
-                    assertEquals("Should have 3 elements",3, theater.models.length);
-                    assertEquals("Should have [\"Halo\", \"Nihao\", \"Ciao\"]", ["Halo", "Nihao", "Ciao"], theater.pluck("title"));
-                });
+            var onSuccess = callbacks.add(function () {
+                assertEquals("Should have 3 elements", 3, theater.models.length);
+                assertEquals("Should have [\"Halo\", \"Nihao\", \"Ciao\"]", ["Halo", "Nihao", "Ciao"], theater.pluck("title"));
+            });
 
-                var onError = callbacks.addErrback(function () {
-                    jstestdriver.console.log("create model v2 Error");
-                });
+            var onError = callbacks.addErrback(function () {
+                jstestdriver.console.log("create model v2 Error");
+            });
 
-                theater.fetch({
-                    offset : 2,
-                    success:onSuccess,
-                    error:onError});
-            }
-        );
+            theater.fetch({
+                offset:2,
+                success:onSuccess,
+                error:onError});
+        }
+    );
 
     queue.call("Try read collection with offset and limit", function (callbacks) {
 
-                    var onSuccess = callbacks.add(function () {
-                        assertEquals("Should have 3 elements",3, theater.models.length);
-                        assertEquals("Should have [\"Halo\", \"Nihao\", \"Ciao\"]", ["Halo", "Nihao", "Ciao"], theater.pluck("title"));
-                    });
+            var onSuccess = callbacks.add(function () {
+                assertEquals("Should have 3 elements", 3, theater.models.length);
+                assertEquals("Should have [\"Halo\", \"Nihao\", \"Ciao\"]", ["Halo", "Nihao", "Ciao"], theater.pluck("title"));
+            });
 
-                    var onError = callbacks.addErrback(function () {
-                        jstestdriver.console.log("create model v2 Error");
-                    });
+            var onError = callbacks.addErrback(function () {
+                jstestdriver.console.log("create model v2 Error");
+            });
 
-                    theater.fetch({
-                        offset : 2,
-                        success:onSuccess,
-                        error:onError});
-                }
-            );
+            theater.fetch({
+                offset:2,
+                success:onSuccess,
+                error:onError});
+        }
+    );
 
 };

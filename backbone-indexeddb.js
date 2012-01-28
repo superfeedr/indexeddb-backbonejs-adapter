@@ -158,23 +158,25 @@
                     }
                     // First, let's run the before script
                     migration.before(function () {
+
                         var continueMigration = function (e) {
                             var transaction = this.dbRequest.transaction || versionRequest.result;
-
-                            //last modification occurred, need finish
-                            if(migrations.length ==0) {
-                                transaction.oncomplete = function() {
-
-                                    debug_log("Done migrating");
-                                    // No more migration
-                                    options.success();
-                                }
-                            }
 
                             migration.migrate(transaction, function () {
                                 // Migration successfully appliedn let's go to the next one!
                                 migration.after(function () {
                                     debug_log("Migrated to " + migration.version);
+
+                                    //last modification occurred, need finish
+                                    if(migrations.length ==0) {
+                                        transaction.oncomplete = function() {
+
+                                            debug_log("Done migrating");
+                                            // No more migration
+                                            options.success();
+                                        }
+                                    }
+
                                     that._migrate_next(migrations, version, options);
                                 });
                             });
@@ -246,7 +248,7 @@
         read: function (storeName, object, options) {
             var readTransaction = this.db.transaction([storeName], IDBTransaction.READ_ONLY);
             this._track_transaction(readTransaction);
-            
+
             var store = readTransaction.objectStore(storeName);
             var json = object.toJSON();
 
@@ -283,7 +285,7 @@
         delete: function (storeName, object, options) {
             var deleteTransaction = this.db.transaction([storeName], IDBTransaction.READ_WRITE);
             //this._track_transaction(deleteTransaction);
-            
+
             var store = deleteTransaction.objectStore(storeName);
             var json = object.toJSON();
 
@@ -307,7 +309,7 @@
             var skipped = 0, processed = 0;
             var queryTransaction = this.db.transaction([storeName], IDBTransaction.READ_ONLY);
             //this._track_transaction(queryTransaction);
-            
+
             var readCursor = null;
             var store = queryTransaction.objectStore(storeName);
             var index = null,
@@ -324,7 +326,7 @@
                             lower = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][1] : options.conditions[index.keyPath][0];
                             upper = options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1] ? options.conditions[index.keyPath][0] : options.conditions[index.keyPath][1];
                             bounds = IDBKeyRange.bound(lower, upper, true, true);
-                            
+
                             if (options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1]) {
                                 // Looks like we want the DESC order
                                 readCursor = index.openCursor(bounds, 2);
@@ -353,7 +355,7 @@
                     readCursor = store.openCursor();
                 }
             }
-            
+
             if (typeof (readCursor) == "undefined" || !readCursor) {
                 options.error("No Cursor");
             } else {
@@ -397,7 +399,7 @@
                                 deleteRequest.onerror = function (event) {
                                     elements.push(cursor.value);
                                 };
-                                
+
                             } else {
                                 elements.push(cursor.value);
                             }
@@ -418,11 +420,12 @@
     // ExecutionQueue object
     // The execution queue is an abstraction to buffer up requests to the database.
     // It holds a "driver". When the driver is ready, it just fires up the queue and executes in sync.
-    function ExecutionQueue(schema) {
+    function ExecutionQueue(schema,next) {
         this.driver     = new Driver(schema, this.ready.bind(this));
         this.started    = false;
         this.stack      = [];
         this.version    = _.last(schema.migrations).version;
+        this.next = next;
     }
 
     // ExecutionQueue Prototype
@@ -434,6 +437,7 @@
             _.each(this.stack, function (message) {
                 this.execute(message);
             }.bind(this));
+            this.next();
         },
 
         // Executes a given command on the driver. If not started, just stacks up one more element.
@@ -456,7 +460,7 @@
     // single model), but also the method... etc.
     // Keeps track of the connections
     var Databases = {};
-    
+
     Backbone.sync = function (method, object, options) {
 
         if(method=="closeall"){
@@ -475,11 +479,18 @@
             }
         }
 
-        if (!Databases[schema.id]) {
-                  Databases[schema.id] = new ExecutionQueue(schema);
-                }
+        var next = function(){
+            Databases[schema.id].execute([method, object, options]);
+        };
 
-        Databases[schema.id].execute([method, object, options]);
+        if (!Databases[schema.id]) {
+              Databases[schema.id] = new ExecutionQueue(schema,next);
+            }else
+        {
+            next();
+        }
+
+
     };
 
     //window.addEventListener("unload",function(){Backbone.sync("closeall")})
