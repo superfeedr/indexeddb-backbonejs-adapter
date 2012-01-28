@@ -227,7 +227,6 @@ backboneIndexedDBTest.prototype.testCreateModelBeforeAndNext = function (queue) 
 
             deleteDB(databasev3);
 
-            debugger;
             var MovieV3 = Backbone.Model.extend({
                 database:databasev3,
                 storeName:"movies"
@@ -443,7 +442,6 @@ backboneIndexedDBTest.prototype.testDeleteModel = function (queue) {
 
 function resetMovies(collection) {
 
-    //debugger;
     var modelsToDestroy = _.clone(collection.models);
     _.each(modelsToDestroy, function (movie) {
         movie.destroy({wait:false});
