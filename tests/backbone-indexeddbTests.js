@@ -227,6 +227,7 @@ backboneIndexedDBTest.prototype.testCreateModelBeforeAndNext = function (queue) 
 
             deleteDB(databasev3);
 
+            debugger;
             var MovieV3 = Backbone.Model.extend({
                 database:databasev3,
                 storeName:"movies"
@@ -442,9 +443,10 @@ backboneIndexedDBTest.prototype.testDeleteModel = function (queue) {
 
 function resetMovies(collection) {
 
-
-    _.each(collection.models, function (movie) {
-        movie.destroy();
+    //debugger;
+    var modelsToDestroy = _.clone(collection.models);
+    _.each(modelsToDestroy, function (movie) {
+        movie.destroy({wait:false});
     })
 
     collection.reset();
@@ -494,7 +496,7 @@ backboneIndexedDBTest.prototype.testReadCollection = function (queue) {
 
             var onSuccess = callbacks.add(function (model) {
                 resetMovies(theater);
-                assertEquals("collection created", model.models.length, 5);
+                assertEquals("collection created", 5, model.models.length);
             });
 
             var onError = callbacks.addErrback(function () {
@@ -699,6 +701,7 @@ backboneIndexedDBTest.prototype.testReadCollection = function (queue) {
                 jstestdriver.console.log("support for the 'addIndividually' property error");
             });
 
+            theater = new Theater();
             theater.bind("add", onSuccess);
 
             theater.fetch({
@@ -707,5 +710,6 @@ backboneIndexedDBTest.prototype.testReadCollection = function (queue) {
                 error:onError});
         }
     );
+
 
 };
