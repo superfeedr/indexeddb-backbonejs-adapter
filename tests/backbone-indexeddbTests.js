@@ -179,7 +179,7 @@ backboneIndexedDBTest.prototype.testCreateModelBeforeAndNext = function (queue) 
                     },
                     {
                         version:2,
-                        before : callbacks.add(function (next) {
+                        before:callbacks.add(function (next) {
                             jstestdriver.console.log("before");
                             jstestdriver.console.log("migration path step before #1");
                             assertEquals("migration path step before", 1, stepOnUpgrade);
@@ -203,14 +203,14 @@ backboneIndexedDBTest.prototype.testCreateModelBeforeAndNext = function (queue) 
                             stepOnUpgrade++;
                             next();
                         }),
-                        after : callbacks.add(function (next) {
+                        after:callbacks.add(function (next) {
                             jstestdriver.console.log("after");
                             var m = new MovieV3();
                             m.save({
                                 title:"The Matrix 3",
                                 format:"dvd"
                             }, {
-                                success: callbacks.add(function(){
+                                success:callbacks.add(function () {
                                     jstestdriver.console.log("migration path step save #4");
                                     assertEquals("migration path step save", 4, stepOnUpgrade);
                                     stepOnUpgrade++;
@@ -231,7 +231,6 @@ backboneIndexedDBTest.prototype.testCreateModelBeforeAndNext = function (queue) 
                 database:databasev3,
                 storeName:"movies"
             });
-
 
 
             var onSuccess = callbacks.add(function () {
@@ -499,7 +498,7 @@ backboneIndexedDBTest.prototype.testReadCollection = function (queue) {
             });
 
             var onError = callbacks.addErrback(function () {
-                jstestdriver.console.log("fetc collection Error");
+                jstestdriver.console.log("clean collection Error");
             });
 
             theater = new Theater();
@@ -521,7 +520,7 @@ backboneIndexedDBTest.prototype.testReadCollection = function (queue) {
             });
 
             var onError = callbacks.addErrback(function () {
-                jstestdriver.console.log("create model v2 Error");
+                jstestdriver.console.log("read collection with no options Error");
             });
 
             theater.fetch({
@@ -538,7 +537,7 @@ backboneIndexedDBTest.prototype.testReadCollection = function (queue) {
             });
 
             var onError = callbacks.addErrback(function () {
-                jstestdriver.console.log("create model v2 Error");
+                jstestdriver.console.log("ead collection with limit Error");
             });
 
             theater.fetch({
@@ -556,7 +555,7 @@ backboneIndexedDBTest.prototype.testReadCollection = function (queue) {
             });
 
             var onError = callbacks.addErrback(function () {
-                jstestdriver.console.log("create model v2 Error");
+                jstestdriver.console.log("read collection with offset Error");
             });
 
             theater.fetch({
@@ -574,11 +573,136 @@ backboneIndexedDBTest.prototype.testReadCollection = function (queue) {
             });
 
             var onError = callbacks.addErrback(function () {
-                jstestdriver.console.log("create model v2 Error");
+                jstestdriver.console.log("read collection with offset and limit Error");
             });
 
             theater.fetch({
                 offset:2,
+                success:onSuccess,
+                error:onError});
+        }
+    );
+
+    queue.call("Try read collection with range", function (callbacks) {
+
+            var onSuccess = callbacks.add(function () {
+                assertEquals("Should have 3 elements", 3, theater.models.length);
+                assertEquals("Should have [\"Bonjour\", \"Halo\", \"Nihao\"]", ["Bonjour", "Halo", "Nihao"], theater.pluck("title"));
+            });
+
+            var onError = callbacks.addErrback(function () {
+                jstestdriver.console.log("ead collection with range Error");
+            });
+
+            theater.fetch({
+                range:["1.5", "4.5"],
+                success:onSuccess,
+                error:onError});
+        }
+    );
+
+    queue.call("Try read collection via condition on index with a single value", function (callbacks) {
+
+            var onSuccess = callbacks.add(function () {
+                assertEquals("Should have 2 elements", 2, theater.models.length);
+                assertEquals("Should have [\"Bonjour\", \"Ciao\"]", ["Bonjour", "Ciao"], theater.pluck("title"));
+            });
+
+            var onError = callbacks.addErrback(function () {
+                jstestdriver.console.log("read collection via condition on index with a single value Error");
+            });
+
+            theater.fetch({
+                conditions:{
+                    format:"dvd"
+                },
+                success:onSuccess,
+                error:onError});
+        }
+    );
+
+    queue.call("Try read collection via condition on index with a range and a limit", function (callbacks) {
+
+            var onSuccess = callbacks.add(function () {
+                assertEquals("Should have 2 elements", 2, theater.models.length);
+                assertEquals("Should have [\"Hello\", \"Halo\"]", ["Hello", "Halo"], theater.pluck("title"));
+            });
+
+            var onError = callbacks.addErrback(function () {
+                jstestdriver.console.log("read collection via condition on index with a range and a limit Error");
+            });
+
+            theater.fetch({
+                limit:2,
+                conditions:{
+                    format:["a", "f"]
+                },
+                success:onSuccess,
+                error:onError});
+        }
+    );
+
+    queue.call("Try read collection via condition on index with a range, an offset and a limit", function (callbacks) {
+
+            var onSuccess = callbacks.add(function () {
+                assertEquals("Should have 2 elements", 2, theater.models.length);
+                assertEquals("Should have [\"Bonjour\", \"Ciao\"]", ["Bonjour", "Ciao"], theater.pluck("title"));
+            });
+
+            var onError = callbacks.addErrback(function () {
+                jstestdriver.console.log("read collection via condition on index with a range, an offset and a limit Error");
+            });
+
+            theater.fetch({
+                offset:2,
+                limit:2,
+                conditions:{
+                    format:["a", "f"]
+                },
+                success:onSuccess,
+                error:onError});
+        }
+    );
+
+    queue.call("Try read collection via condition on index with a range reversed", function (callbacks) {
+
+            var onSuccess = callbacks.add(function () {
+                assertEquals("Should have 4 elements", 4, theater.models.length);
+                assertEquals("Should have [\"Ciao\", \"Bonjour\", \"Halo\", \"Hello\"]", ["Ciao", "Bonjour", "Halo", "Hello"], theater.pluck("title"));
+            });
+
+            var onError = callbacks.addErrback(function () {
+                jstestdriver.console.log("read collection via condition on index with a range reversed");
+            });
+
+            theater.fetch({
+                conditions:{
+                    format:["f", "a"]
+                },
+                success:onSuccess,
+                error:onError});
+        }
+    );
+
+
+    queue.call("Try support for the 'addIndividually' property", function (callbacks) {
+
+
+            var onSuccess = callbacks.add(function (model, collection) {
+
+                if(collection.length == 5){
+                assertEquals("Should have 5 elements", 5, collection.length);
+                }
+             });
+
+            var onError = callbacks.addErrback(function () {
+                jstestdriver.console.log("support for the 'addIndividually' property error");
+            });
+
+            theater.bind("add", onSuccess);
+
+            theater.fetch({
+                addIndividually:true,
                 success:onSuccess,
                 error:onError});
         }

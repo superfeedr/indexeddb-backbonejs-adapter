@@ -12,7 +12,7 @@
     // Naming is a mess!
     var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB ;
     var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction; // No prefix in moz
-    var IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange; // No prefix in moz
+    var IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange ; // No prefix in moz
 
     /* Horrible Hack to prevent ' Expected an identifier and instead saw 'continue' (a reserved word).'*/
     if (window.indexedDB) {
@@ -22,6 +22,7 @@
     }
 
     window.indexedDB = indexedDB;
+    window.IDBCursor = window.IDBCursor || window.webkitIDBCursor ||  window.mozIDBCursor ||  window.msIDBCursor ;
     // Driver object
     // That's the interesting part.
     // There is a driver for each schema provided. The schema is a te combination of name (for the database), a version as well as migrations to reach that 
@@ -329,10 +330,10 @@
 
                             if (options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1]) {
                                 // Looks like we want the DESC order
-                                readCursor = index.openCursor(bounds, 2);
+                                readCursor = index.openCursor(bounds, window.IDBCursor.PREV);
                             } else {
                                 // We want ASC order
-                                readCursor = index.openCursor(bounds, 0);
+                                readCursor = index.openCursor(bounds, window.IDBCursor.NEXT);
                             }
                         } else if (options.conditions[index.keyPath]) {
                             bounds = IDBKeyRange.only(options.conditions[index.keyPath]);
@@ -347,9 +348,9 @@
                     upper = options.range[0] > options.range[1] ? options.range[0] : options.range[1];
                     bounds = IDBKeyRange.bound(lower, upper);
                     if (options.range[0] > options.range[1]) {
-                        readCursor = store.openCursor(bounds, 2);
+                        readCursor = store.openCursor(bounds, window.IDBCursor.PREV);
                     } else {
-                        readCursor = store.openCursor(bounds, 0);
+                        readCursor = store.openCursor(bounds, window.IDBCursor.NEXT);
                     }
                 } else {
                     readCursor = store.openCursor();
