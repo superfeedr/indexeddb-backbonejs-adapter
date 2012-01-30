@@ -24,6 +24,11 @@ IE10 support has been added thanks to [lcalvy](https://github.com/lcalvy).
 
 Other browsers implementing the Indexed Database API Working Draft should work, with some of these limitations possibly cropping up or possibly not. Support and ease of use is expected to improve in upcoming releases of browsers.
 
+# Node
+
+This is quite useless to most people, but there is also an npm module for this. It's useless because IndexedDB hasn't been (yet?) ported to node.js.
+It can be used in the context of browserify though... and this is exactly why this npm version exists.
+
 # Implementation
 
 ## Database & Schema
