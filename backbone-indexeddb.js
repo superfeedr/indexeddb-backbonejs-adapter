@@ -26,8 +26,6 @@
         window.IDBCursor = window.IDBCursor || window.webkitIDBCursor ||  window.mozIDBCursor ||  window.msIDBCursor ;
     }
     else {
-        var _ = require('underscore'),
-            Backbone = require('backbone');
     }
 
     // Driver object
