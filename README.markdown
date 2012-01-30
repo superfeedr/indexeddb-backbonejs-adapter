@@ -20,6 +20,8 @@ Chrome 11 and later are supported. (Chrome 9 and 10 should also work but are unt
 * will work with `file:///` URLs, but
 * poses some hard size limit (5MB? quantity untested) unless Chrome is started with `--unlimited-quota-for-indexeddb`, with apparently no way to request increasing the quota.
 
+IE10 support has been added thanks to [lcalvy](https://github.com/lcalvy).
+
 Other browsers implementing the Indexed Database API Working Draft should work, with some of these limitations possibly cropping up or possibly not. Support and ease of use is expected to improve in upcoming releases of browsers.
 
 # Implementation
