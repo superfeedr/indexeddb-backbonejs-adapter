@@ -18,4 +18,4 @@ var Thing = Backbone.Model.extend({
     
 });
 
-//backboneIndexeddb.sync("read", new Thing(), {}); // we just export the sync method.
+backboneIndexeddb.sync("read", new Thing(), {}); // we just export the sync method.
