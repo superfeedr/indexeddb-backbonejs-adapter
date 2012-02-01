@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <script src="../lib/jquery.js"></script>
+        <script src="../lib/jquery-1.7.1.min.js"></script>
         <link rel="stylesheet" href="../lib/qunit.css" type="text/css" media="screen" />
         <script type="text/javascript" src="../lib/qunit.js"></script>
         <!-- Dependencies -->
@@ -131,7 +131,7 @@
                     },
                     error: function (o, error) {
                         start();
-                        equals(true, false, error.error.target.webkitErrorMessage);
+                        equals(true, false, error.target.webkitErrorMessage || error.target.errorMessage || error.target.message);
                     }
                 });
             } else {
@@ -175,8 +175,8 @@
                      },
                      error: function (o, error) {
                          start();
-                         if (window.console && window.console.log) window.console.log(error);
-                         equals(true, false, error.error.target.webkitErrorMessage);
+                         if (window.console && window.console.error) window.console.error(error);
+                         equals(true, false, tryGetErrorMessage(error));
                          nextTest();
                      }
                  });
@@ -194,8 +194,8 @@
                                  },
                                  error: function (o, error) {
                                      start();
-                                     if (window.console && window.console.log) window.console.log(error);
-                                     equals(true, false, error.error.target.webkitErrorMessage);
+                                     if (window.console && window.console.error) window.console.error(error);
+                                     equals(true, false, tryGetErrorMessage(error));
                                      nextTest();
                                  }
                              });
@@ -231,7 +231,7 @@
                      },
                      error: function (o, error) {
                          start();
-                         equals(true, false, error.error.target.webkitErrorMessage);
+                         equals(true, false, tryGetErrorMessage(error));
                          nextTest();
                      }
                  });
@@ -263,7 +263,7 @@
                         },
                         error: function (o, error) {
                             start();
-                            equals(true, false, error.error.target.webkitErrorMessage);
+                            equals(true, false, tryGetErrorMessage(error));
                             nextTest();
                         }
                     });
@@ -341,7 +341,7 @@
                     },
                     error: function (object, error) {
                         start();
-                        equals(true, false, error.error.target.webkitErrorMessage);
+                        equals(true, false, tryGetErrorMessage(error));
                         nextTest();
                     }
                 });
@@ -382,7 +382,7 @@
                     error: function (error) {
                         // error
                         start();
-                        equals(true, false, error.error.target.webkitErrorMessage);
+                        equals(true, false, tryGetErrorMessage(error));
                         nextTest();
                     }
                 });
@@ -650,6 +650,10 @@
         // Let's go run the tests
         
         nextTest();
+
+        function tryGetErrorMessage(error){
+            return error.message || ((error.target) ? error.target.webkitErrorMessage || error.target.errorMessage || error.target.message : error.toString());
+        }
         
         
         // First, let's see the content of the database... because I'm little worried about it!

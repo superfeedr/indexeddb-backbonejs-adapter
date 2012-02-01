@@ -27,13 +27,15 @@
     // That's the interesting part.
     // There is a driver for each schema provided. The schema is a te combination of name (for the database), a version as well as migrations to reach that 
     // version of the database.
-    function Driver(schema, ready) {
+    function Driver(schema, ready, started) {
+        this.started        = started;
         this.schema         = schema;
         this.ready          = ready;
         this.error          = null;
         this.transactions   = []; // Used to list all transactions and keep track of active ones.
         this.db             = null;
         this.supportOnUpgradeNeeded = false;
+        this.isUpgradeNeeded = false;
         var lastMigrationPathVersion = _.last(this.schema.migrations).version;
         debug_log("opening database " + this.schema.id + " in version #" + lastMigrationPathVersion);
         this.dbRequest      = indexedDB.open(this.schema.id,lastMigrationPathVersion); //schema version need to be an unsigned long
@@ -41,11 +43,14 @@
         this.launchMigrationPath = function(dbVersion) {
             var clonedMigrations = _.clone(schema.migrations);
             this.migrate(clonedMigrations, dbVersion, {
-                success: function () {
+                ready: function () {
                     this.ready();
                 }.bind(this),
                 error: function () {
                     this.error = "Database not up to date. " + dbVersion + " expected was " + lastMigrationPathVersion;
+                }.bind(this),
+                started : function(){
+                    this.started();
                 }.bind(this)
             });
         };
@@ -56,6 +61,7 @@
 
         this.dbRequest.onsuccess = function (e) {
             this.db = e.target.result; // Attach the connection ot the queue.
+            debug_log("dbRequest open succeded on version #" + this.db.version);
 
             if(!this.supportOnUpgradeNeeded)
             {
@@ -63,15 +69,41 @@
 
                 if (currentIntDBVersion === lastMigrationPathVersion) { //if support new event onupgradeneeded will trigger the ready function
                     // No migration to perform!
+                    this.started();
                     this.ready();
                 } else if (currentIntDBVersion < lastMigrationPathVersion ) {
+                    this.isUpgradeNeeded =true;
                     // We need to migrate up to the current migration defined in the database
                     this.launchMigrationPath(currentIntDBVersion);
                 } else {
                     // Looks like the IndexedDB is at a higher version than the current driver schema.
                     this.error = "Database version is greater than current code " + currentIntDBVersion + " expected was " + lastMigrationPathVersion;
                 }
-            };
+            }
+            else
+            {
+                //test if we are in upgrade processing because we finish the upgrade path
+                if(this.isUpgradeNeeded){
+                    //finir l'upgrade
+                    this.onUpgradeDone(_.clone(this.schema.migrations),{
+                                    ready: function () {
+                                        this.ready();
+                                    }.bind(this),
+                                    error: function () {
+                                        //this.error = "Database not up to date. " + dbVersion + " expected was " + lastMigrationPathVersion;
+                                    }.bind(this),
+                                    started : function(){
+                                        this.started();
+                                    }.bind(this)
+                                });
+                }
+                else
+                {
+                    this.started();
+                    this.ready();
+                }
+
+            }
         }.bind(this);
 
 
@@ -91,6 +123,7 @@
         this.dbRequest.onupgradeneeded = function(iDBVersionChangeEvent){
             this.db =iDBVersionChangeEvent.target.transaction.db;
 
+            this.isUpgradeNeeded =true;
             this.supportOnUpgradeNeeded = true;
 
             debug_log("onupgradeneeded = " + iDBVersionChangeEvent.oldVersion + " => " + iDBVersionChangeEvent.newVersion);
@@ -98,6 +131,8 @@
 
 
         }.bind(this);
+
+
     }
 
     function debug_log(str) {
@@ -124,11 +159,11 @@
         // Performs all the migrations to reach the right version of the database.
         migrate: function (migrations, version, options) {
             debug_log("Starting migrations from " + version);
-            this._migrate_next(migrations, version, options);
+            this._migrate_next(migrations, version, options,[]);
         },
 
         // Performs the next migrations. This method is private and should probably not be called.
-        _migrate_next: function (migrations, version, options) {
+        _migrate_next: function (migrations, version, options,afters) {
             debug_log("_migrate_next begin version from #" + version);
             var that = this;
             var migration = migrations.shift();
@@ -160,38 +195,39 @@
                                 debug_log("_migrate_next done migrate version #" + migration.version);
                                 // Migration successfully appliedn let's go to the next one!
                                 debug_log("_migrate_next begin after version #" + migration.version);
-                                migration.after(function () {
-                                    debug_log("_migrate_next done after version #" + migration.version);
-                                    debug_log("Migrated to " + migration.version);
 
-                                    //last modification occurred, need finish
-                                    if(migrations.length ==0) {
-                                        /*if(this.supportOnUpgradeNeeded){
-                                            debug_log("Done migrating");
-                                            // No more migration
-                                            options.success();
-                                        }
-                                        else{*/
-                                            debug_log("_migrate_next setting transaction.oncomplete to finish  version #" + migration.version);
-                                            transaction.oncomplete = function() {
-                                                debug_log("_migrate_next done transaction.oncomplete version #" + migration.version);
+                                afters.push(migration);
 
-                                                debug_log("Done migrating");
-                                                // No more migration
-                                                options.success();
-                                            }
-                                        //}
+                                debug_log("_migrate_next done after version #" + migration.version);
+                                debug_log("Migrated to " + migration.version);
+
+                                //last modification occurred, need finish
+                                if(migrations.length ==0) {
+                                    /*if(this.supportOnUpgradeNeeded){
+                                        debug_log("Done migrating");
+                                        // No more migration
+                                        options.success();
                                     }
-                                    else
-                                    {
-                                        debug_log("_migrate_next setting transaction.oncomplete to recursive _migrate_next  version #" + migration.version);
+                                    else{*/
+                                    //if we are in support of onUpgradedNeed event, after upgrades will occur in dbRequest.onsuccess event
+                                    if(!this.supportOnUpgradeNeeded){
+                                        debug_log("_migrate_next setting transaction.oncomplete to finish  version #" + migration.version);
                                         transaction.oncomplete = function() {
-                                           debug_log("_migrate_next end from version #" + version + " to " + migration.version);
-                                           that._migrate_next(migrations, version, options);
-                                       }
+                                            this.onUpgradeDone(_.clone(this.schema.migrations),options);
+                                        }.bind(this);
                                     }
+                                    //}
+                                }
+                                else
+                                {
+                                    debug_log("_migrate_next setting transaction.oncomplete to recursive _migrate_next  version #" + migration.version);
+                                    transaction.oncomplete = function() {
+                                       debug_log("_migrate_next end from version #" + version + " to " + migration.version);
+                                       that._migrate_next(migrations, version, options,afters);
+                                   }
+                                }
 
-                                }.bind(this));
+
                             }.bind(this));
                         }.bind(this);
 
@@ -202,40 +238,76 @@
                             versionRequest.onerror = options.error;
                         }
                         else {
-                            continueMigration();
+                            continueMigration(afters,options);
                         }
 
                     }.bind(this));
                 } else {
                     // No need to apply this migration
                     debug_log("Skipping migration " + migration.version);
-                    this._migrate_next(migrations, version, options);
+                    this._migrate_next(migrations, version, options,[]);
                 }
             }
         },
 
+        onUpgradeDone : function(afters,options){
+            debug_log("Done migrating to db version #" + this.db.version);
+            // No more migration
+            options.started();
+            debug_log("Begin After migrating");
+            var migrationAfter =function(afters){
+                var after = afters.shift();
+                if(after){
+                    debug_log("Begin After migrating on migration version #" + after.version);
+                    var nextStepCallback = function(){migrationAfter(afters)}.bind(this);
+                    if (typeof after.after == "undefined") {
+                        after.after = function (next) {
+                            next();
+                        };
+                    }
+                    after.after(nextStepCallback);
+            }
+                else
+                {
+                    debug_log("All after migration success");
+                    options.ready();
+                }
+            }.bind(this);
+            migrationAfter(afters);
+        },
+
         // This is the main method, called by the ExecutionQueue when the driver is ready (database open and migration performed)
         execute: function (storeName, method, object, options) {
-            debug_log("execute : " + method +  " on " + storeName + " for " + object.id);
-            switch (method) {
-            case "create":
-                this.write(storeName, object, options);
-                break;
-            case "read":
-                if (object instanceof Backbone.Collection) {
-                    this.query(storeName, object, options); // It's a collection
-                } else {
-                    this.read(storeName, object, options); // It's a model
+            try
+            {
+                //debug_log("execute : " + method +  " on " + storeName + " for " + object.id);
+                var now = new Date();
+                switch (method) {
+                case "create":
+                    object.set({created: now, 'modified':now});
+                    this.write(storeName, object, options);
+                    break;
+                case "read":
+                    if (object instanceof Backbone.Collection) {
+                        this.query(storeName, object, options); // It's a collection
+                    } else {
+                        this.read(storeName, object, options); // It's a model
+                    }
+                    break;
+                case "update":
+                    object.set({modified: now});
+                    this.write(storeName, object, options); // We may want to check that this is not a collection. TOFIX
+                    break;
+                case "delete":
+                    this.delete(storeName, object, options); // We may want to check that this is not a collection. TOFIX
+                    break;
+                default:
+                    // Hum what?
                 }
-                break;
-            case "update":
-                this.write(storeName, object, options); // We may want to check that this is not a collection. TOFIX
-                break;
-            case "delete":
-                this.delete(storeName, object, options); // We may want to check that this is not a collection. TOFIX
-                break;
-            default:
-                // Hum what?
+            }
+            catch(e)
+            {
+                options.error(e);
             }
         },
 
@@ -436,7 +508,7 @@
     // The execution queue is an abstraction to buffer up requests to the database.
     // It holds a "driver". When the driver is ready, it just fires up the queue and executes in sync.
     function ExecutionQueue(schema,next) {
-        this.driver     = new Driver(schema, this.ready.bind(this));
+        this.driver     = new Driver(schema, this.ready.bind(this), this.startQueue.bind(this));
         this.started    = false;
         this.stack      = [];
         this.version    = _.last(schema.migrations).version;
@@ -447,8 +519,13 @@
     ExecutionQueue.prototype = {
         // Called when the driver is ready
         // It just loops over the elements in the queue and executes them.
-        ready: function () {
+        startQueue: function () {
             this.started = true;
+        },
+
+        // Called when the driver is finished to initialize
+        // It just loops over the elements in the queue and executes them.
+        ready: function () {
             _.each(this.stack, function (message) {
                 this.execute(message);
             }.bind(this));

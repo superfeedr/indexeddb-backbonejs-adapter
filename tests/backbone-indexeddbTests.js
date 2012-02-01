@@ -6,8 +6,6 @@
  * To change this template use File | Settings | File Templates.
  */
 
-//window.console = jstestdriver.console;
-
 var databasev1 = {
     id:"movies-database",
     description:"The database for the Movies",
@@ -36,6 +34,8 @@ var databasev2 = {
         {
             version:2,
             migrate:function (transaction, next) {
+
+                debugger;
                 var store = undefined;
                 if (!transaction.db.objectStoreNames.contains("movies")) {
                     store = transaction.db.createObjectStore("movies");
@@ -78,6 +78,14 @@ deleteDB(databasev2);
 function deleteDB(dbObj) {
     try {
 
+        var handleErrorOnDBDelete = function(e){
+            jstestdriver.console.error("indexedDB.delete Error: " + e);
+            //prefer change id of database to start ont new instance
+            dbObj.id = dbObj.id + "." + fallBackDBGuid;
+            jstestdriver.console.log("fallback to new database name :" + dbObj.id)
+
+        };
+
         var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
 
         var dbreq = indexedDB.deleteDatabase(dbObj.id);
@@ -86,14 +94,12 @@ function deleteDB(dbObj) {
             jstestdriver.console.log("indexedDB: " + dbObj.id + " deleted");
         }
         dbreq.onerror = function (event) {
-            jstestdriver.console.error("indexedDB.delete Error: " + event.message);
+            handleErrorOnDBDelete(event);
         }
     }
     catch (e) {
-        jstestdriver.console.error("Error: " + e.message);
-        //prefer change id of database to start ont new instance
-        dbObj.id = dbObj.id + "." + fallBackDBGuid;
-        jstestdriver.console.log("fallback to new database name :" + dbObj.id)
+        jstestdriver.console.error("Error: " + (e.message || e));
+        handleErrorOnDBDelete(e);
     }
 }
 
@@ -186,7 +192,8 @@ backboneIndexedDBTest.prototype.testCreateModelBeforeAndNext = function (queue) 
                             stepOnUpgrade++;
                             next();
                         }),
-                        migrate:callbacks.add(function (transaction, next) {
+                        migrate:function (transaction, next) {
+                            debugger;
                             var store = undefined;
                             if (!transaction.db.objectStoreNames.contains("movies")) {
                                 store = transaction.db.createObjectStore("movies");
@@ -199,10 +206,10 @@ backboneIndexedDBTest.prototype.testCreateModelBeforeAndNext = function (queue) 
                                 unique:false
                             });
                             jstestdriver.console.log("migration path step migrate #2");
-                            assertEquals("migration path step migrate", 2, stepOnUpgrade);
+                            //assertEquals("migration path step migrate", 2, stepOnUpgrade);
                             stepOnUpgrade++;
                             next();
-                        }),
+                        },
                         after:callbacks.add(function (next) {
                             jstestdriver.console.log("after");
                             var m = new MovieV3();
@@ -214,6 +221,10 @@ backboneIndexedDBTest.prototype.testCreateModelBeforeAndNext = function (queue) 
                                     jstestdriver.console.log("migration path step save #4");
                                     assertEquals("migration path step save", 4, stepOnUpgrade);
                                     stepOnUpgrade++;
+                                }),
+                                error :callbacks.addErrback(function (e) {
+                                jstestdriver.console.error("migration path step save #4" + e);
+                                stepOnUpgrade++;
                                 })
                             });
                             jstestdriver.console.log("migration path step after #3");
@@ -237,11 +248,15 @@ backboneIndexedDBTest.prototype.testCreateModelBeforeAndNext = function (queue) 
                 jstestdriver.console.log("get model v3 Success");
                 jstestdriver.console.log("migration path step is 5 #5");
                 assertEquals("migration path step is 5", 5, stepOnUpgrade);
+
+                deleteDB(databasev3);
             });
 
             var onError = callbacks.addErrback(function () {
                 jstestdriver.console.log("migration path step is 5 #5");
                 jstestdriver.console.log("get model v3 Error");
+
+                deleteDB(databasev3);
             });
 
 
@@ -249,6 +264,32 @@ backboneIndexedDBTest.prototype.testCreateModelBeforeAndNext = function (queue) 
             movie.fetch({
                 success:onSuccess,
                 error:onError});
+        }
+    );
+};
+
+backboneIndexedDBTest.prototype.testSaveModel = function (queue) {
+    var movie = undefined;
+    var savedMovie = undefined;
+    queue.call("Try save model", function (callbacks) {
+
+            var onSuccess = callbacks.add(function () {
+                assertTrue("model created", true);
+            });
+
+            var onError = callbacks.addErrback(function () {
+                jstestdriver.console.log("model v2 Error");
+            });
+
+
+            movie = new Movie();
+            movie.save({
+                    title:"The Matrix 3",
+                    format:"dvd"
+                },
+                {
+                    success:onSuccess,
+                    error:onError});
         }
     );
 };
@@ -711,3 +752,66 @@ backboneIndexedDBTest.prototype.testReadCollection = function (queue) {
 
 
 };
+
+
+backboneIndexedDBTest.prototype.testDeleteDatabase = function (queue) {
+    queue.call("Try delete db v1", function (callbacks) {
+
+            var onSuccess = callbacks.add(function (model) {
+                assertTrue("databaseV1 deleted", true);
+            });
+
+
+            var onError = callbacks.addErrback(function () {
+                jstestdriver.console.error("failed deletedb v1");
+            });
+
+            var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
+
+            var dbreq = indexedDB.deleteDatabase(dbObj.id);
+            dbreq.onsuccess = onSuccess;
+
+            dbreq.onerror = onError ;
+    });
+
+    queue.call("Try delete db v1", function (callbacks) {
+
+            var onSuccess = callbacks.add(function (model) {
+                assertTrue("databaseV1 deleted", true);
+            });
+
+
+            var onError = callbacks.addErrback(function () {
+                jstestdriver.console.error("failed deletedb v1");
+            });
+
+            var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
+
+            var dbreq = indexedDB.deleteDatabase(databasev1.id);
+            dbreq.onsuccess = onSuccess;
+
+            dbreq.onerror = onError ;
+    });
+
+    queue.call("Try delete db v2", function (callbacks) {
+
+            var onSuccess = callbacks.add(function (model) {
+                assertTrue("databaseV1 deleted", true);
+            });
+
+
+            var onError = callbacks.addErrback(function () {
+                jstestdriver.console.error("failed deletedb v2");
+            });
+
+            var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
+
+            var dbreq = indexedDB.deleteDatabase(databasev2.id);
+            dbreq.onsuccess = onSuccess;
+
+            dbreq.onerror = onError ;
+    });
+
+}
+    
+
