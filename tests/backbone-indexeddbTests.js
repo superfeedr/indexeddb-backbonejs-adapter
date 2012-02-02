@@ -35,7 +35,6 @@ var databasev2 = {
             version:2,
             migrate:function (transaction, next) {
 
-                debugger;
                 var store = undefined;
                 if (!transaction.db.objectStoreNames.contains("movies")) {
                     store = transaction.db.createObjectStore("movies");
@@ -193,7 +192,6 @@ backboneIndexedDBTest.prototype.testCreateModelBeforeAndNext = function (queue) 
                             next();
                         }),
                         migrate:function (transaction, next) {
-                            debugger;
                             var store = undefined;
                             if (!transaction.db.objectStoreNames.contains("movies")) {
                                 store = transaction.db.createObjectStore("movies");
@@ -756,26 +754,7 @@ backboneIndexedDBTest.prototype.testReadCollection = function (queue) {
 
 backboneIndexedDBTest.prototype.testDeleteDatabase = function (queue) {
     queue.call("Try delete db v1", function (callbacks) {
-
-            var onSuccess = callbacks.add(function (model) {
-                assertTrue("databaseV1 deleted", true);
-            });
-
-
-            var onError = callbacks.addErrback(function () {
-                jstestdriver.console.error("failed deletedb v1");
-            });
-
-            var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
-
-            var dbreq = indexedDB.deleteDatabase(dbObj.id);
-            dbreq.onsuccess = onSuccess;
-
-            dbreq.onerror = onError ;
-    });
-
-    queue.call("Try delete db v1", function (callbacks) {
-
+        try{
             var onSuccess = callbacks.add(function (model) {
                 assertTrue("databaseV1 deleted", true);
             });
@@ -789,13 +768,20 @@ backboneIndexedDBTest.prototype.testDeleteDatabase = function (queue) {
 
             var dbreq = indexedDB.deleteDatabase(databasev1.id);
             dbreq.onsuccess = onSuccess;
-
+            dbreq.onabort = onError ;
             dbreq.onerror = onError ;
+
+        }catch(e)
+        {
+            onError(e);
+        }
     });
 
     queue.call("Try delete db v2", function (callbacks) {
 
-            var onSuccess = callbacks.add(function (model) {
+        try{
+
+        var onSuccess = callbacks.add(function (model) {
                 assertTrue("databaseV1 deleted", true);
             });
 
@@ -808,8 +794,13 @@ backboneIndexedDBTest.prototype.testDeleteDatabase = function (queue) {
 
             var dbreq = indexedDB.deleteDatabase(databasev2.id);
             dbreq.onsuccess = onSuccess;
-
+            dbreq.onabort = onError ;
             dbreq.onerror = onError ;
+
+        }catch(e)
+        {
+            onError(e);
+        }
     });
 
 }
