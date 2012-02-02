@@ -233,10 +233,10 @@
                 this.write(storeName, object, options);
                 break;
             case "read":
-                if (object instanceof Backbone.Collection) {
-                    this.query(storeName, object, options); // It's a collection
-                } else {
+                if (object.id) {
                     this.read(storeName, object, options); // It's a model
+                } else {
+                    this.query(storeName, object, options); // It's a collection
                 }
                 break;
             case "update":
