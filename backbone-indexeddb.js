@@ -233,7 +233,7 @@
                 this.write(storeName, object, options);
                 break;
             case "read":
-                if (object.id) {
+                if (object.id || object.cid) {
                     this.read(storeName, object, options); // It's a model
                 } else {
                     this.query(storeName, object, options); // It's a collection
