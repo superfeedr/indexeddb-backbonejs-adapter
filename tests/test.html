@@ -644,6 +644,11 @@
                     // this is a bit hokey, but will do the trick.
                     if (collection.length === 5) nextTest();
                 });
+            }],
+            ["support for model specific sync override", function(){
+              start();
+              equals(typeof Backbone.ajaxSync,'function', "should not be the original Backbone.sync function" );
+              nextTest();
             }]
         ];
 
