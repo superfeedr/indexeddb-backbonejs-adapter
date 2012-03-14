@@ -11,7 +11,7 @@
 
     if(typeof exports !== 'undefined'){
         _ = require('underscore');
-        Backbone = require('Backbone');
+        Backbone = require('backbone');
     }
     
     
