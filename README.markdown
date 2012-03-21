@@ -155,5 +155,16 @@ You can also *get all items after a certain object (excluding that object), or f
 
 You can also obviously combine all these.
 
+## Optional Persistence
+If needing to persist via ajax as well as indexed-db, just override your model's sync to use ajax instead.
+
+```coffeescript
+class MyMode extends Backbone.Model
+
+  sync: Backbone.ajaxSync
+```
+
+Any more complex dual persistence can be provided in method overrides, which could eventually drive out the design for a multi-layer persistence adapter.
+
 
 

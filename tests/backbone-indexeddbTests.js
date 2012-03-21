@@ -711,3 +711,9 @@ backboneIndexedDBTest.prototype.testReadCollection = function (queue) {
 
 
 };
+backboneIndexedDBTest.prototype.testRememberAjaxSync = function(queue){
+  queue.call("Backbone.ajaxSync should be remembered for models that need async actions",function(callbacks){
+      assertEquals("Should be the original Backbone.sync function",typeof Backbone.ajaxSync, "function")
+    }
+  );
+}
