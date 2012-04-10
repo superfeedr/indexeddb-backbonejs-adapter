@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <script src="../lib/jquery.js"></script>
+        <script src="../lib/jquery-1.7.1.min.js"></script>
         <link rel="stylesheet" href="../lib/qunit.css" type="text/css" media="screen" />
         <script type="text/javascript" src="../lib/qunit.js"></script>
         <!-- Dependencies -->
@@ -23,37 +23,37 @@
         };
 
         var databasev2 = {
-                    id: "movies-database",
-                    description: "The database for the Movies",
-                    migrations: [{
-                        version: 1,
-                        migrate: function (transaction, next) {
-                            var store = transaction.db.createObjectStore("movies");
-                            next();
-                        }
-                    }, {
-                        version: 2,
-                        migrate: function (transaction, next) {
-                            var store = undefined;
-                            if(!transaction.db.objectStoreNames.contains("movies")){
-                                store = transaction.db.createObjectStore("movies");
-                            }
-                            store = transaction.objectStore("movies");
-                            store.createIndex("titleIndex", "title", {
-                                unique: false
-                            });
-                            store.createIndex("formatIndex", "format", {
-                                unique: false
-                            });
-                            next();
-                        }
-                    }]
-                };
+            id: "movies-database",
+            description: "The database for the Movies",
+            migrations: [{
+                version: 1,
+                migrate: function (transaction, next) {
+                    var store = transaction.db.createObjectStore("movies");
+                    next();
+                }
+            }, {
+                version: 2,
+                migrate: function (transaction, next) {
+                    var store = undefined;
+                    if(!transaction.db.objectStoreNames.contains("movies")){
+                        store = transaction.db.createObjectStore("movies");
+                    }
+                    store = transaction.objectStore("movies");
+                    store.createIndex("titleIndex", "title", {
+                        unique: false
+                    });
+                    store.createIndex("formatIndex", "format", {
+                        unique: false
+                    });
+                    next();
+                }
+            }
+        ]};
 
         var Moviev1 = Backbone.Model.extend({
-                    database: databasev1,
-                    storeName: "movies"
-                });
+            database: databasev1,
+            storeName: "movies"
+        });
 
         var Movie = Backbone.Model.extend({
             database: databasev2,
@@ -89,14 +89,14 @@
         }
 
         // Generate four random hex digits.
-            function S4() {
-                return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-            }
+        function S4() {
+            return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+        }
 
-            // Generate a pseudo-GUID by concatenating random hexadecimal.
-            function guid() {
-                return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
-            }
+        // Generate a pseudo-GUID by concatenating random hexadecimal.
+        function guid() {
+            return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
+        }
 
         function addAllMovies(movies, done) {
             if (!movies) {
