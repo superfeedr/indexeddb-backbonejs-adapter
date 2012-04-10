@@ -230,7 +230,7 @@
             debugLog("execute : " + method +  " on " + storeName + " for " + object.id);
             switch (method) {
             case "create":
-                this.write(storeName, object, options);
+                this.create(storeName, object, options);
                 break;
             case "read":
                 if (object.id || object.cid) {
@@ -240,7 +240,7 @@
                 }
                 break;
             case "update":
-                this.write(storeName, object, options); // We may want to check that this is not a collection. TOFIX
+                this.update(storeName, object, options); // We may want to check that this is not a collection. TOFIX
                 break;
             case "delete":
                 this.delete(storeName, object, options); // We may want to check that this is not a collection. TOFIX
@@ -250,9 +250,29 @@
             }
         },
 
-        // Writes the json to the storeName in db.
+        // Writes the json to the storeName in db. It is a create operations, which means it will fail if the key already exists
         // options are just success and error callbacks.
-        write: function (storeName, object, options) {
+        create: function (storeName, object, options) {
+            var writeTransaction = this.db.transaction([storeName], IDBTransaction.READ_WRITE);
+            //this._track_transaction(writeTransaction);
+            var store = writeTransaction.objectStore(storeName);
+            var json = object.toJSON();
+
+            if (!json.id) json.id = guid();
+
+            var writeRequest = store.add(json, json.id);
+
+            writeRequest.onerror = function (e) {
+                options.error(e);
+            };
+            writeRequest.onsuccess = function (e) {
+                options.success(json);
+            };
+        },
+        
+        // Writes the json to the storeName in db. It is an update operation, which means it will overwrite the value if the key already exist
+        // options are just success and error callbacks.
+        update: function (storeName, object, options) {
             var writeTransaction = this.db.transaction([storeName], IDBTransaction.READ_WRITE);
             //this._track_transaction(writeTransaction);
             var store = writeTransaction.objectStore(storeName);
