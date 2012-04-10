@@ -2,9 +2,6 @@ This is an [IndexedDB](http://www.w3.org/TR/IndexedDB/) adapter for [Backbone.js
 
 # Warnings
 
-This is a very very very first attempt. It was tested with Google Chrome 11 and Firefox Nightly 6.0 Alpha 1.
-It also requires the current development version of BackboneJS ([branch 0.5.0-pre](https://github.com/documentcloud/backbone/raw/master/backbone.js)).
-
 *It lacks a lot of documentation, so it's good idea to look at the tests if you're interested in using it.*
 
 # Browser support and limitations
@@ -24,10 +21,14 @@ IE10 support has been added thanks to [lcalvy](https://github.com/lcalvy).
 
 Other browsers implementing the Indexed Database API Working Draft should work, with some of these limitations possibly cropping up or possibly not. Support and ease of use is expected to improve in upcoming releases of browsers.
 
+# Tests
+
+Just open the <code>/tests/test.html</code> in your favorite browser. (or serve if from a webserver for Firefox, which can't run indexedDB on local file.)
+
 # Node
 
 This is quite useless to most people, but there is also an npm module for this. It's useless because IndexedDB hasn't been (yet?) ported to node.js.
-It can be used in the context of browserify though... and this is exactly why this npm version exists.
+It can be used in the context of [browserify](https://github.com/substack/node-browserify) though... and this is exactly why this npm version exists.
 
 # Implementation
 

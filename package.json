@@ -8,9 +8,6 @@
     "url": "git://github.com/superfeedr/indexeddb-backbonejs-adapter.git"
   },
   "main": "backbone-indexeddb.js",
-  "engines": {
-    "node": "~0.6.9"
-  },
   "dependencies": {
        "backbone": "*"
       ,"underscore": "*"
