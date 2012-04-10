@@ -540,6 +540,7 @@
     };
 
     if(typeof exports == 'undefined'){
+        Backbone.ajaxSync = Backbone.sync;
         Backbone.sync = sync;
     }
     else {
