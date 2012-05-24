@@ -11,18 +11,64 @@
 
     // Naming is a mess!
     var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB ;
-    var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction; // No prefix in moz
+    var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || {}; // No prefix in moz
     var IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange ; // No prefix in moz
+    var IDBCursor = window.IDBCursor || window.webkitIDBCursor ||  window.mozIDBCursor ||  window.msIDBCursor || {};
+    //new w3C draft implementation 23 may 2012 : http://dvcs.w3.org/hg/IndexedDB/raw-file/tip/Overview.html
+    /*
+     Affected properties on the current spec and their string values:
+     • IDBRequest : unsigned short readyState; >>> DOMString readyState;
+     • const unsigned short LOADING = 1; >>> “pending”
+     • const unsigned short DONE = 2; >>> “done”
+
+     • IDBCursor : unsigned short direction; >>> DOMString direction;
+     • const unsigned short NEXT = 0; >>> “next”
+     • const unsigned short NEXT_NO_DUPLICATE = 1; >>> "nextunique"
+     • const unsigned short PREV = 2; >>> “prev”
+     • const unsigned short PREV_NO_DUPLICATE = 3; >>> “prevunique”
+
+     • IDBTransaction : unsigned short mode; >>> DOMString mode;
+     • const unsigned short READ_ONLY = 0; >>> “readonly”
+     • const unsigned short READ_WRITE = 1; >>> “readwrite”
+     • const unsigned short VERSION_CHANGE = 2; >>> “versionchange”
+     */
+
+    if(!IDBTransaction.READ_ONLY){
+        IDBTransaction.READ_ONLY = "readonly"
+    }
+
+    if(!IDBTransaction.READ_WRITE){
+        IDBTransaction.READ_WRITE = "readwrite"
+    }
+
+    if(!IDBTransaction.VERSION_CHANGE){
+        IDBTransaction.VERSION_CHANGE = "versionchange"
+    }
+
+    if(!IDBCursor.NEXT){
+        IDBTransaction.NEXT = "next"
+    }
+
+    if(!IDBCursor.NEXT_NO_DUPLICATE){
+        IDBTransaction.NEXT_NO_DUPLICATE = "nextunique"
+    }
+
+    if(!IDBCursor.PREV){
+        IDBTransaction.PREV = "prev"
+    }
+
+    if(!IDBCursor.PREV_NO_DUPLICATE){
+        IDBTransaction.PREV_NO_DUPLICATE = "prevunique"
+    }
+
 
     /* Horrible Hack to prevent ' Expected an identifier and instead saw 'continue' (a reserved word).'*/
-    if (window.indexedDB) {
-         indexedDB.prototype._continue =  indexedDB.prototype.continue;
-    } else if (window.webkitIDBRequest) {
+    if (window.webkitIDBRequest) {
         webkitIDBRequest.prototype._continue = webkitIDBRequest.prototype.continue;
     }
 
     window.indexedDB = indexedDB;
-    window.IDBCursor = window.IDBCursor || window.webkitIDBCursor ||  window.mozIDBCursor ||  window.msIDBCursor ;
+    window.IDBCursor = IDBCursor;
     // Driver object
     // That's the interesting part.
     // There is a driver for each schema provided. The schema is a te combination of name (for the database), a version as well as migrations to reach that 
