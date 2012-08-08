@@ -35,15 +35,16 @@
     // That's the interesting part.
     // There is a driver for each schema provided. The schema is a te combination of name (for the database), a version as well as migrations to reach that 
     // version of the database.
-    function Driver(schema, ready) {
+    function Driver(schema, ready, nolog) {
         this.schema         = schema;
         this.ready          = ready;
         this.error          = null;
         this.transactions   = []; // Used to list all transactions and keep track of active ones.
         this.db             = null;
+        this.nolog          = nolog;
         this.supportOnUpgradeNeeded = false;
         var lastMigrationPathVersion = _.last(this.schema.migrations).version;
-        debugLog("opening database " + this.schema.id + " in version #" + lastMigrationPathVersion);
+        if (!this.nolog) debugLog("opening database " + this.schema.id + " in version #" + lastMigrationPathVersion);
         this.dbRequest      = indexedDB.open(this.schema.id,lastMigrationPathVersion); //schema version need to be an unsigned long
 
         this.launchMigrationPath = function(dbVersion) {
@@ -59,7 +60,7 @@
         };
 
         this.dbRequest.onblocked = function(event){
-            debugLog("blocked");
+            if (!this.nolog) debugLog("blocked");
         }
 
         this.dbRequest.onsuccess = function (e) {
@@ -101,7 +102,7 @@
 
             this.supportOnUpgradeNeeded = true;
 
-            debugLog("onupgradeneeded = " + iDBVersionChangeEvent.oldVersion + " => " + iDBVersionChangeEvent.newVersion);
+            if (!this.nolog) debugLog("onupgradeneeded = " + iDBVersionChangeEvent.oldVersion + " => " + iDBVersionChangeEvent.newVersion);
             this.launchMigrationPath(iDBVersionChangeEvent.oldVersion);
 
 
@@ -134,13 +135,13 @@
 
         // Performs all the migrations to reach the right version of the database.
         migrate: function (migrations, version, options) {
-            debugLog("Starting migrations from " + version);
+            if (!this.nolog) debugLog("Starting migrations from " + version);
             this._migrate_next(migrations, version, options);
         },
 
         // Performs the next migrations. This method is private and should probably not be called.
         _migrate_next: function (migrations, version, options) {
-            debugLog("_migrate_next begin version from #" + version);
+            if (!this.nolog) debugLog("_migrate_next begin version from #" + version);
             var that = this;
             var migration = migrations.shift();
             if (migration) {
@@ -157,23 +158,23 @@
                         };
                     }
                     // First, let's run the before script
-                    debugLog("_migrate_next begin before version #" + migration.version);
+                    if (!this.nolog) debugLog("_migrate_next begin before version #" + migration.version);
                     migration.before(function () {
-                        debugLog("_migrate_next done before version #" + migration.version);
+                        if (!this.nolog) debugLog("_migrate_next done before version #" + migration.version);
 
                         var continueMigration = function (e) {
-                            debugLog("_migrate_next continueMigration version #" + migration.version);
+                            if (!this.nolog) debugLog("_migrate_next continueMigration version #" + migration.version);
 
                             var transaction = this.dbRequest.transaction || versionRequest.result;
-                            debugLog("_migrate_next begin migrate version #" + migration.version);
+                            if (!this.nolog) debugLog("_migrate_next begin migrate version #" + migration.version);
 
                             migration.migrate(transaction, function () {
-                                debugLog("_migrate_next done migrate version #" + migration.version);
+                                if (!this.nolog) debugLog("_migrate_next done migrate version #" + migration.version);
                                 // Migration successfully appliedn let's go to the next one!
-                                debugLog("_migrate_next begin after version #" + migration.version);
+                                if (!this.nolog) debugLog("_migrate_next begin after version #" + migration.version);
                                 migration.after(function () {
-                                    debugLog("_migrate_next done after version #" + migration.version);
-                                    debugLog("Migrated to " + migration.version);
+                                    if (!this.nolog) debugLog("_migrate_next done after version #" + migration.version);
+                                    if (!this.nolog) debugLog("Migrated to " + migration.version);
 
                                     //last modification occurred, need finish
                                     if(migrations.length ==0) {
@@ -183,11 +184,11 @@
                                             options.success();
                                         }
                                         else{*/
-                                            debugLog("_migrate_next setting transaction.oncomplete to finish  version #" + migration.version);
+                                            if (!this.nolog) debugLog("_migrate_next setting transaction.oncomplete to finish  version #" + migration.version);
                                             transaction.oncomplete = function() {
-                                                debugLog("_migrate_next done transaction.oncomplete version #" + migration.version);
+                                                if (!that.nolog) debugLog("_migrate_next done transaction.oncomplete version #" + migration.version);
 
-                                                debugLog("Done migrating");
+                                                if (!that.nolog) debugLog("Done migrating");
                                                 // No more migration
                                                 options.success();
                                             }
@@ -195,9 +196,9 @@
                                     }
                                     else
                                     {
-                                        debugLog("_migrate_next setting transaction.oncomplete to recursive _migrate_next  version #" + migration.version);
+                                        if (!this.nolog) debugLog("_migrate_next setting transaction.oncomplete to recursive _migrate_next  version #" + migration.version);
                                         transaction.oncomplete = function() {
-                                           debugLog("_migrate_next end from version #" + version + " to " + migration.version);
+                                           if (!this.nolog) debugLog("_migrate_next end from version #" + version + " to " + migration.version);
                                            that._migrate_next(migrations, version, options);
                                        }
                                     }
@@ -207,7 +208,7 @@
                         }.bind(this);
 
                         if(!this.supportOnUpgradeNeeded){
-                            debugLog("_migrate_next begin setVersion version #" + migration.version);
+                            if (!this.nolog) debugLog("_migrate_next begin setVersion version #" + migration.version);
                             var versionRequest = this.db.setVersion(migration.version);
                             versionRequest.onsuccess = continueMigration;
                             versionRequest.onerror = options.error;
@@ -219,7 +220,7 @@
                     }.bind(this));
                 } else {
                     // No need to apply this migration
-                    debugLog("Skipping migration " + migration.version);
+                    if (!this.nolog) debugLog("Skipping migration " + migration.version);
                     this._migrate_next(migrations, version, options);
                 }
             }
@@ -227,7 +228,7 @@
 
         // This is the main method, called by the ExecutionQueue when the driver is ready (database open and migration performed)
         execute: function (storeName, method, object, options) {
-            debugLog("execute : " + method +  " on " + storeName + " for " + object.id);
+            if (!this.nolog) debugLog("execute : " + method +  " on " + storeName + " for " + object.id);
             switch (method) {
             case "create":
                 this.create(storeName, object, options);
@@ -466,8 +467,8 @@
     // ExecutionQueue object
     // The execution queue is an abstraction to buffer up requests to the database.
     // It holds a "driver". When the driver is ready, it just fires up the queue and executes in sync.
-    function ExecutionQueue(schema,next) {
-        this.driver     = new Driver(schema, this.ready.bind(this));
+    function ExecutionQueue(schema,next,nolog) {
+        this.driver     = new Driver(schema, this.ready.bind(this), nolog);
         this.started    = false;
         this.stack      = [];
         this.version    = _.last(schema.migrations).version;
@@ -530,7 +531,7 @@
         };
 
         if (!Databases[schema.id]) {
-              Databases[schema.id] = new ExecutionQueue(schema,next);
+              Databases[schema.id] = new ExecutionQueue(schema,next,schema.nolog);
             }else
         {
             next();
