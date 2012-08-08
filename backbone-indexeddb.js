@@ -254,7 +254,7 @@
         // Writes the json to the storeName in db. It is a create operations, which means it will fail if the key already exists
         // options are just success and error callbacks.
         create: function (storeName, object, options) {
-            var writeTransaction = this.db.transaction([storeName], IDBTransaction.READ_WRITE);
+            var writeTransaction = this.db.transaction([storeName], "readwrite");
             //this._track_transaction(writeTransaction);
             var store = writeTransaction.objectStore(storeName);
             var json = object.toJSON();
@@ -274,7 +274,7 @@
         // Writes the json to the storeName in db. It is an update operation, which means it will overwrite the value if the key already exist
         // options are just success and error callbacks.
         update: function (storeName, object, options) {
-            var writeTransaction = this.db.transaction([storeName], IDBTransaction.READ_WRITE);
+            var writeTransaction = this.db.transaction([storeName], "readwrite");
             //this._track_transaction(writeTransaction);
             var store = writeTransaction.objectStore(storeName);
             var json = object.toJSON();
@@ -293,7 +293,7 @@
 
         // Reads from storeName in db with json.id if it's there of with any json.xxxx as long as xxx is an index in storeName 
         read: function (storeName, object, options) {
-            var readTransaction = this.db.transaction([storeName], IDBTransaction.READ_ONLY);
+            var readTransaction = this.db.transaction([storeName], "readonly");
             this._track_transaction(readTransaction);
 
             var store = readTransaction.objectStore(storeName);
@@ -330,7 +330,7 @@
 
         // Deletes the json.id key and value in storeName from db.
         delete: function (storeName, object, options) {
-            var deleteTransaction = this.db.transaction([storeName], IDBTransaction.READ_WRITE);
+            var deleteTransaction = this.db.transaction([storeName], "readwrite");
             //this._track_transaction(deleteTransaction);
 
             var store = deleteTransaction.objectStore(storeName);
@@ -354,7 +354,7 @@
         query: function (storeName, collection, options) {
             var elements = [];
             var skipped = 0, processed = 0;
-            var queryTransaction = this.db.transaction([storeName], IDBTransaction.READ_ONLY);
+            var queryTransaction = this.db.transaction([storeName], "readonly");
             //this._track_transaction(queryTransaction);
 
             var readCursor = null;
