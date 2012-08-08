@@ -1,5 +1,11 @@
 This is an [IndexedDB](http://www.w3.org/TR/IndexedDB/) adapter for [Backbone.js](http://documentcloud.github.com/backbone/).
 
+My local branch have the following fixes:
+
+* User configurable logging. This module outputs quite a lot of debugging information, which can now be turned off by activating the "nolog" flag in your databaseconfiguration (set it to true to disable logging).
+
+* Replaced READ_WRITE and READ_ONLY integer constants with "readwrite" and "readonly" string to get rid of warnings in Chrome.
+
 # Warnings
 
 *It lacks a lot of documentation, so it's good idea to look at the tests if you're interested in using it.*
