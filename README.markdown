@@ -1,11 +1,5 @@
 This is an [IndexedDB](http://www.w3.org/TR/IndexedDB/) adapter for [Backbone.js](http://documentcloud.github.com/backbone/).
 
-My local branch have the following fixes:
-
-* User configurable logging. This module outputs quite a lot of debugging information, which can now be turned off by activating the "nolog" flag in your databaseconfiguration (set it to true to disable logging).
-
-* Replaced READ_WRITE and READ_ONLY integer constants with "readwrite" and "readonly" string to get rid of warnings in Chrome.
-
 # Warnings
 
 *It lacks a lot of documentation, so it's good idea to look at the tests if you're interested in using it.*
@@ -94,7 +88,7 @@ For example, in your traditional backbone apps, you would do something like :
 
 	var movie = new Movie({id: "123"})
 	movie.fetch()
-	
+
 to fetch from the remote server the Movie with the id `123`. This is convenient when you know the id. With this adapter, you can do something like
 
 	var movie = new Movie({title: "Avatar"})
@@ -118,7 +112,7 @@ First, you can `limit` and `offset` the number of items that are being fetched b
 	});
 
 You can also *provide a range* applied to the id.
-	
+
 	var theater = new Theater() // Theater is a collection of movies
 	theater.fetch({
 		range: ["a", "b"],
@@ -143,10 +137,10 @@ You can also *get all items for which an indexed value is comprised between 2 va
 	theater.fetch({
 		conditions: {genre: ["a", "e"]},
 		success: function() {
-			// The theater collection will be populated with all the movies whose genre is "adventure", "comic", "drama", but not "thriller". 
+			// The theater collection will be populated with all the movies whose genre is "adventure", "comic", "drama", but not "thriller".
 		}
 	});
-	
+
 You can also *get all items after a certain object (excluding that object), or from a certain object (including) to a certain object (including)* (using their ids). This combined with the addIndividually option allows you to lazy load a full collection, by always loading the next element.
 
     	var theater = new Theater() // Theater is a collection of movies
@@ -155,7 +149,7 @@ You can also *get all items after a certain object (excluding that object), or f
     		after: new Movie({id: 12345, ...}),
     		to: new Movie({id: 12345, ...}),
     		success: function() {
-    			// The theater collection will be populated with all the movies whose genre is "adventure", "comic", "drama", but not "thriller". 
+    			// The theater collection will be populated with all the movies whose genre is "adventure", "comic", "drama", but not "thriller".
     		}
     	});
 
