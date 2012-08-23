@@ -22,16 +22,9 @@
             }]
         };
 
-        var databasev2 = {
-            id: "movies-database",
-            description: "The database for the Movies",
-            migrations: [{
-                version: 1,
-                migrate: function (transaction, next) {
-                    var store = transaction.db.createObjectStore("movies");
-                    next();
-                }
-            }, {
+        var databasev2 = $.extend(true, {}, databasev1);
+        databasev2.migrations.push(
+            {
                 version: 2,
                 migrate: function (transaction, next) {
                     var store = undefined;
@@ -48,7 +41,18 @@
                     next();
                 }
             }
-        ]};
+        );
+
+        var databasev3 = $.extend(true, {}, databasev2);
+        databasev3.migrations.push(
+            {
+                version: 3,
+                migrate: function (transaction, next) {
+                    var store = transaction.db.createObjectStore("torrents", {keyPath: "id"});
+                    next();
+                }
+            }
+        );
 
         var Moviev1 = Backbone.Model.extend({
             database: databasev1,
@@ -58,6 +62,11 @@
         var Movie = Backbone.Model.extend({
             database: databasev2,
             storeName: "movies"
+        });
+
+        var Torrent = Backbone.Model.extend({
+            database: databasev3,
+            storeName: "torrents"
         });
 
         var Theater = Backbone.Collection.extend({
@@ -688,6 +697,55 @@
               start();
               equals(typeof Backbone.ajaxSync,'function', "should not be the original Backbone.sync function" );
               nextTest();
+            }],
+            ["model add with keyPath specified", function(){
+                var torrent = new Torrent();
+                torrent.isnew = function() { return true};
+                torrent.save({
+                    id: 1,
+                    title: "The Matrix",
+                    format: "dvd"
+                }, {
+                    success: function () {
+                        start();
+                        equals(true, true, "The torrent should be added successfully");
+                        nextTest();
+                    },
+                    error: function (o, error) {
+                        start();
+                        if (window.console && window.console.log) window.console.log(error);
+                        equals(true, false, error.error.target.webkitErrorMessage);
+                        nextTest();
+                    }
+                });
+            }],
+            ["model update with keyPath specified", function(){
+                var torrent = new Torrent({id: 1});
+                torrent.fetch({
+                    success: function () {
+                        start();
+                        equals("The Matrix", torrent.get("title"), "The torrent should be fetched successfully");
+                        torrent.save({rating: 5}, {
+                          success: function() {
+                            start();
+                            equals(true, true, "The torrent should be updated succesfully");
+                            nextTest();
+                          },
+                          error: function (o, error) {
+                              start();
+                              if (window.console && window.console.log) window.console.log(error);
+                              equals(true, false, error.error.target.webkitErrorMessage);
+                              nextTest();
+                          }
+                        });
+                    },
+                    error: function (o, error) {
+                        start();
+                        if (window.console && window.console.log) window.console.log(error);
+                        equals(true, false, error.error.target.webkitErrorMessage);
+                        nextTest();
+                    }
+                });
             }]
         ];
 

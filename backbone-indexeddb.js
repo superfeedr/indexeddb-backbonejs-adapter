@@ -258,10 +258,14 @@
             //this._track_transaction(writeTransaction);
             var store = writeTransaction.objectStore(storeName);
             var json = object.toJSON();
+            var writeRequest;
 
             if (!json.id) json.id = guid();
 
-            var writeRequest = store.add(json, json.id);
+            if (!store.keyPath)
+              writeRequest = store.add(json, json.id);
+            else
+              writeRequest = store.add(json);
 
             writeRequest.onerror = function (e) {
                 options.error(e);
@@ -278,10 +282,14 @@
             //this._track_transaction(writeTransaction);
             var store = writeTransaction.objectStore(storeName);
             var json = object.toJSON();
+            var writeRequest;
 
             if (!json.id) json.id = guid();
 
-            var writeRequest = store.put(json, json.id);
+            if (!store.keyPath)
+              writeRequest = store.put(json, json.id);
+            else
+              writeRequest = store.put(json);
 
             writeRequest.onerror = function (e) {
                 options.error(e);
