@@ -390,7 +390,7 @@
                                 // We want ASC order
                                 readCursor = index.openCursor(bounds, window.IDBCursor.NEXT);
                             }
-                        } else if (options.conditions[index.keyPath]) {
+                        } else if (options.conditions[index.keyPath] != undefined) {
                             bounds = IDBKeyRange.only(options.conditions[index.keyPath]);
                             readCursor = index.openCursor(bounds);
                         }
