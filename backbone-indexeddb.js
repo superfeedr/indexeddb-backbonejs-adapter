@@ -65,7 +65,6 @@
 
         this.dbRequest.onsuccess = function (e) {
             this.db = e.target.result; // Attach the connection ot the queue.
-
             if(!this.supportOnUpgradeNeeded)
             {
                 var currentIntDBVersion = (parseInt(this.db.version) ||  0); // we need convert beacuse chrome store in integer and ie10 DP4+ in int;
@@ -73,6 +72,7 @@
 
                 if (currentIntDBVersion === lastMigrationInt) { //if support new event onupgradeneeded will trigger the ready function
                     // No migration to perform!
+
                     this.ready();
                 } else if (currentIntDBVersion < lastMigrationInt ) {
                     // We need to migrate up to the current migration defined in the database
@@ -523,7 +523,8 @@
             _.each(Databases,function(database){
                 database.close();
             });
-
+            // Clean up active databases object.
+            Databases = {}
             return;
         }
 
