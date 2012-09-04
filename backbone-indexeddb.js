@@ -65,20 +65,21 @@
 
         this.dbRequest.onsuccess = function (e) {
             this.db = e.target.result; // Attach the connection ot the queue.
-
             if(!this.supportOnUpgradeNeeded)
             {
                 var currentIntDBVersion = (parseInt(this.db.version) ||  0); // we need convert beacuse chrome store in integer and ie10 DP4+ in int;
+                var lastMigrationInt = (parseInt(lastMigrationPathVersion) || 0);  // And make sure we compare numbers with numbers.
 
-                if (currentIntDBVersion === lastMigrationPathVersion) { //if support new event onupgradeneeded will trigger the ready function
+                if (currentIntDBVersion === lastMigrationInt) { //if support new event onupgradeneeded will trigger the ready function
                     // No migration to perform!
+
                     this.ready();
-                } else if (currentIntDBVersion < lastMigrationPathVersion ) {
+                } else if (currentIntDBVersion < lastMigrationInt ) {
                     // We need to migrate up to the current migration defined in the database
                     this.launchMigrationPath(currentIntDBVersion);
                 } else {
                     // Looks like the IndexedDB is at a higher version than the current driver schema.
-                    this.error = "Database version is greater than current code " + currentIntDBVersion + " expected was " + lastMigrationPathVersion;
+                    this.error = "Database version is greater than current code " + currentIntDBVersion + " expected was " + lastMigrationInt;
                 }
             };
         }.bind(this);
@@ -389,7 +390,7 @@
                                 // We want ASC order
                                 readCursor = index.openCursor(bounds, window.IDBCursor.NEXT);
                             }
-                        } else if (options.conditions[index.keyPath]) {
+                        } else if (options.conditions[index.keyPath] != undefined) {
                             bounds = IDBKeyRange.only(options.conditions[index.keyPath]);
                             readCursor = index.openCursor(bounds);
                         }
@@ -522,7 +523,8 @@
             _.each(Databases,function(database){
                 database.close();
             });
-
+            // Clean up active databases object.
+            Databases = {}
             return;
         }
 
