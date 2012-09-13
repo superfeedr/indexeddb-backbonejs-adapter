@@ -245,7 +245,11 @@
                 this.update(storeName, object, options); // We may want to check that this is not a collection. TOFIX
                 break;
             case "delete":
-                this.delete(storeName, object, options); // We may want to check that this is not a collection. TOFIX
+                if (object.id || object.cid) {
+                    this.delete(storeName, object, options);
+                } else {
+                    this.clear(storeName, object, options);
+                }
                 break;
             default:
                 // Hum what?
@@ -351,6 +355,22 @@
             };
             deleteRequest.onerror = function (event) {
                 options.error("Not Deleted");
+            };
+        },
+
+        // Clears all records for storeName from db.
+        clear: function (storeName, object, options) {
+            var deleteTransaction = this.db.transaction([storeName], "readwrite");
+            //this._track_transaction(deleteTransaction);
+
+            var store = deleteTransaction.objectStore(storeName);
+
+            var deleteRequest = store.clear();
+            deleteRequest.onsuccess = function (event) {
+                options.success(null);
+            };
+            deleteRequest.onerror = function (event) {
+                options.error("Not Cleared");
             };
         },
 
