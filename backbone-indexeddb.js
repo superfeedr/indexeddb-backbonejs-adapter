@@ -20,14 +20,6 @@
      var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction; // No prefix in moz
      var IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange ; // No prefix in moz
 
-     /* Horrible Hack to prevent ' Expected an identifier and instead saw 'continue' (a reserved word).'*/
-     if (window.indexedDB) {
-         indexedDB.prototype._continue =  indexedDB.prototype.continue;
-     } else if (window.webkitIDBRequest) {
-         webkitIDBRequest.prototype._continue = webkitIDBRequest.prototype.continue;
-     }
-
-     window.indexedDB = indexedDB;
      window.IDBCursor = window.IDBCursor || window.webkitIDBCursor ||  window.mozIDBCursor ||  window.msIDBCursor ;
     
 
