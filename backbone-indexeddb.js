@@ -253,8 +253,9 @@
             var json = object.toJSON();
             var writeRequest;
 
-            if (!json.id) json.id = guid();
-
+            if (json.id === undefined) json.id = guid();
+            if (json.id === null) delete json.id;
+            
             if (!store.keyPath)
               writeRequest = store.add(json, json.id);
             else
