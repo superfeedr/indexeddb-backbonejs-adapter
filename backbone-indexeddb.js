@@ -237,7 +237,7 @@
                 this.update(storeName, object, options); // We may want to check that this is not a collection. TOFIX
                 break;
             case "delete":
-                this.delete(storeName, object, options); // We may want to check that this is not a collection. TOFIX
+                this.remove(storeName, object, options); // We may want to check that this is not a collection. TOFIX
                 break;
             default:
                 // Hum what?
@@ -331,14 +331,14 @@
         },
 
         // Deletes the json.id key and value in storeName from db.
-        delete: function (storeName, object, options) {
+        remove: function (storeName, object, options) {
             var deleteTransaction = this.db.transaction([storeName], "readwrite");
             //this._track_transaction(deleteTransaction);
 
             var store = deleteTransaction.objectStore(storeName);
             var json = object.toJSON();
 
-            var deleteRequest = store.delete(json.id);
+            var deleteRequest = store.remove(json.id);
             deleteRequest.onsuccess = function (event) {
                 options.success(null);
             };
@@ -424,24 +424,28 @@
                         }
                     }
                     else {
+                        // Workaround: Google closure compiler fails due to the method name "continue" clashing with the reserved keyword "continue" 
+                    	var cursor_continue = cursor['continue'];
+                    	
                         // Cursor is not over yet.
                         if (options.limit && processed >= options.limit) {
                             // Yet, we have processed enough elements. So, let's just skip.
                             if (bounds && options.conditions[index.keyPath]) {
-                                cursor.continue(options.conditions[index.keyPath][1] + 1); /* We need to 'terminate' the cursor cleany, by moving to the end */
+                            	
+                            	cursor_continue(options.conditions[index.keyPath][1] + 1); /* We need to 'terminate' the cursor cleany, by moving to the end */
                             } else {
-                                cursor.continue(); /* We need to 'terminate' the cursor cleany, by moving to the end */
+                            	cursor_continue(); /* We need to 'terminate' the cursor cleany, by moving to the end */
                             }
                         }
                         else if (options.offset && options.offset > skipped) {
                             skipped++;
-                            cursor.continue(); /* We need to Moving the cursor forward */
+                            cursor_continue(); /* We need to Moving the cursor forward */
                         } else {
                             // This time, it looks like it's good!
                             if (options.addIndividually) {
                                 collection.add(cursor.value);
                             } else if (options.clear) {
-                                var deleteRequest = store.delete(cursor.value.id);
+                                var deleteRequest = store.remove(cursor.value.id);
                                 deleteRequest.onsuccess = function (event) {
                                     elements.push(cursor.value);
                                 };
@@ -453,7 +457,7 @@
                                 elements.push(cursor.value);
                             }
                             processed++;
-                            cursor.continue();
+                            cursor_continue();
                         }
                     }
                 };
@@ -461,8 +465,8 @@
         },
         close :function(){
             if(this.db){
-                this.db.close()
-;            }
+                this.db.close();
+            }
         }
     };
 
@@ -498,7 +502,7 @@
             }
         },
 
-        close : function(){
+        close: function(){
             this.driver.close();
         }
     };
