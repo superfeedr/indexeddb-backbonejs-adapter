@@ -338,7 +338,7 @@
             var store = deleteTransaction.objectStore(storeName);
             var json = object.toJSON();
 
-            var deleteRequest = store.remove(json.id);
+            var deleteRequest = store['delete'].call(store, json.id);
             deleteRequest.onsuccess = function (event) {
                 options.success(null);
             };
@@ -445,7 +445,7 @@
                             if (options.addIndividually) {
                                 collection.add(cursor.value);
                             } else if (options.clear) {
-                                var deleteRequest = store.remove(cursor.value.id);
+                                var deleteRequest = store['delete'].call(store, cursor.value.id);
                                 deleteRequest.onsuccess = function (event) {
                                     elements.push(cursor.value);
                                 };
