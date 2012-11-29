@@ -425,7 +425,7 @@
                     }
                     else {
                         // Workaround: Google closure compiler fails due to the method name "continue" clashing with the reserved keyword "continue" 
-                    	var cursor_continue = cursor['continue'];
+                        var cursor_continue = cursor['continue'].bind(cursor);
                     	
                         // Cursor is not over yet.
                         if (options.limit && processed >= options.limit) {
