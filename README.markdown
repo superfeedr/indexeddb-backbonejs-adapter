@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/superfeedr/indexeddb-backbonejs-adapter.png)](http://travis-ci.org/superfeedr/indexeddb-backbonejs-adapter)
 This is an [IndexedDB](http://www.w3.org/TR/IndexedDB/) adapter for [Backbone.js](http://documentcloud.github.com/backbone/).
 
 # Warnings
