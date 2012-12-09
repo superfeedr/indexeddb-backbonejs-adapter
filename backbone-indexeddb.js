@@ -17,7 +17,7 @@
     
      // Naming is a mess!
      var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB ;
-     var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction; // No prefix in moz
+     var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || { READ_WRITE: "readwrite" }; // No prefix in moz
      var IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange ; // No prefix in moz
 
      window.IDBCursor = window.IDBCursor || window.webkitIDBCursor ||  window.mozIDBCursor ||  window.msIDBCursor ;
@@ -251,7 +251,7 @@
         // Writes the json to the storeName in db. It is a create operations, which means it will fail if the key already exists
         // options are just success and error callbacks.
         create: function (storeName, object, options) {
-            var writeTransaction = this.db.transaction([storeName], "readwrite");
+            var writeTransaction = this.db.transaction([storeName], IDBTransaction.READ_WRITE);
             //this._track_transaction(writeTransaction);
             var store = writeTransaction.objectStore(storeName);
             var json = object.toJSON();
@@ -276,7 +276,7 @@
         // Writes the json to the storeName in db. It is an update operation, which means it will overwrite the value if the key already exist
         // options are just success and error callbacks.
         update: function (storeName, object, options) {
-            var writeTransaction = this.db.transaction([storeName], "readwrite");
+            var writeTransaction = this.db.transaction([storeName], IDBTransaction.READ_WRITE);
             //this._track_transaction(writeTransaction);
             var store = writeTransaction.objectStore(storeName);
             var json = object.toJSON();
@@ -336,7 +336,7 @@
 
         // Deletes the json.id key and value in storeName from db.
         delete: function (storeName, object, options) {
-            var deleteTransaction = this.db.transaction([storeName], "readwrite");
+            var deleteTransaction = this.db.transaction([storeName], IDBTransaction.READ_WRITE);
             //this._track_transaction(deleteTransaction);
 
             var store = deleteTransaction.objectStore(storeName);
