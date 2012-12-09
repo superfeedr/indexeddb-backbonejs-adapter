@@ -13,19 +13,19 @@
         _ = require('underscore');
         Backbone = require('backbone');
     }
-    
-    
+
+
      // Naming is a mess!
      var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB ;
      var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || { READ_WRITE: "readwrite" }; // No prefix in moz
      var IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange ; // No prefix in moz
 
      window.IDBCursor = window.IDBCursor || window.webkitIDBCursor ||  window.mozIDBCursor ||  window.msIDBCursor ;
-    
+
 
     // Driver object
     // That's the interesting part.
-    // There is a driver for each schema provided. The schema is a te combination of name (for the database), a version as well as migrations to reach that 
+    // There is a driver for each schema provided. The schema is a te combination of name (for the database), a version as well as migrations to reach that
     // version of the database.
     function Driver(schema, ready, nolog) {
         this.schema         = schema;
@@ -251,7 +251,7 @@
         // Writes the json to the storeName in db. It is a create operations, which means it will fail if the key already exists
         // options are just success and error callbacks.
         create: function (storeName, object, options) {
-            var writeTransaction = this.db.transaction([storeName], IDBTransaction.READ_WRITE);
+            var writeTransaction = this.db.transaction([storeName], 'readwrite');
             //this._track_transaction(writeTransaction);
             var store = writeTransaction.objectStore(storeName);
             var json = object.toJSON();
@@ -259,7 +259,7 @@
 
             if (json.id === undefined) json.id = guid();
             if (json.id === null) delete json.id;
-            
+
             if (!store.keyPath)
               writeRequest = store.add(json, json.id);
             else
@@ -272,11 +272,11 @@
                 options.success(json);
             };
         },
-        
+
         // Writes the json to the storeName in db. It is an update operation, which means it will overwrite the value if the key already exist
         // options are just success and error callbacks.
         update: function (storeName, object, options) {
-            var writeTransaction = this.db.transaction([storeName], IDBTransaction.READ_WRITE);
+            var writeTransaction = this.db.transaction([storeName], 'readwrite');
             //this._track_transaction(writeTransaction);
             var store = writeTransaction.objectStore(storeName);
             var json = object.toJSON();
@@ -297,7 +297,7 @@
             };
         },
 
-        // Reads from storeName in db with json.id if it's there of with any json.xxxx as long as xxx is an index in storeName 
+        // Reads from storeName in db with json.id if it's there of with any json.xxxx as long as xxx is an index in storeName
         read: function (storeName, object, options) {
             var readTransaction = this.db.transaction([storeName], "readonly");
             this._track_transaction(readTransaction);
@@ -336,7 +336,7 @@
 
         // Deletes the json.id key and value in storeName from db.
         delete: function (storeName, object, options) {
-            var deleteTransaction = this.db.transaction([storeName], IDBTransaction.READ_WRITE);
+            var deleteTransaction = this.db.transaction([storeName], 'readwrite');
             //this._track_transaction(deleteTransaction);
 
             var store = deleteTransaction.objectStore(storeName);
@@ -523,7 +523,7 @@
         }
     };
 
-    // Method used by Backbone for sync of data with data store. It was initially designed to work with "server side" APIs, This wrapper makes 
+    // Method used by Backbone for sync of data with data store. It was initially designed to work with "server side" APIs, This wrapper makes
     // it work with the local indexedDB stuff. It uses the schema attribute provided by the object.
     // The wrapper keeps an active Executuon Queue for each "schema", and executes querues agains it, based on the object type (collection or
     // single model), but also the method... etc.
@@ -571,6 +571,6 @@
         exports.sync = sync;
         exports.debugLog = debugLog;
     }
-    
+
     //window.addEventListener("unload",function(){Backbone.sync("closeall")})
 })();
