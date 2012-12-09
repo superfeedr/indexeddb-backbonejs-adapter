@@ -682,11 +682,11 @@
                 });
             
             
-                start();
                 // we want 5 'add' events
                 expect(5);
             
                 theater.bind('add', function (model, collection) {
+                    start();
                     counter += 1;
                     equal(collection.length, counter)
                     // this is a bit hokey, but will do the trick.
