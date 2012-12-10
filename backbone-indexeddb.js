@@ -398,10 +398,10 @@
 
                             if (options.conditions[index.keyPath][0] > options.conditions[index.keyPath][1]) {
                                 // Looks like we want the DESC order
-                                readCursor = index.openCursor(bounds, window.IDBCursor.PREV);
+                                readCursor = index.openCursor(bounds, window.IDBCursor.PREV || "prev");
                             } else {
                                 // We want ASC order
-                                readCursor = index.openCursor(bounds, window.IDBCursor.NEXT);
+                                readCursor = index.openCursor(bounds, window.IDBCursor.NEXT || "next");
                             }
                         } else if (options.conditions[index.keyPath] != undefined) {
                             bounds = IDBKeyRange.only(options.conditions[index.keyPath]);
@@ -416,9 +416,9 @@
                     upper = options.range[0] > options.range[1] ? options.range[0] : options.range[1];
                     bounds = IDBKeyRange.bound(lower, upper);
                     if (options.range[0] > options.range[1]) {
-                        readCursor = store.openCursor(bounds, window.IDBCursor.PREV);
+                        readCursor = store.openCursor(bounds, window.IDBCursor.PREV || "prev");
                     } else {
-                        readCursor = store.openCursor(bounds, window.IDBCursor.NEXT);
+                        readCursor = store.openCursor(bounds, window.IDBCursor.NEXT || "next");
                     }
                 } else {
                     readCursor = store.openCursor();
