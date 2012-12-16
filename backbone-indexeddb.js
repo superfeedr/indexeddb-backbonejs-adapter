@@ -548,6 +548,23 @@
                 delete Databases[schema.id];
             }
         }
+        
+        var dfd = jQuery.Deferred();
+        var success = options.success;
+        var error = options.error;
+
+        options.success = function() {
+            dfd.resolve();
+            if (success) {
+                success.apply(null, arguments);
+            }
+        };
+        options.error = function() {
+            dfd.reject();
+            if (error) {
+                error.apply(null, arguments);
+            }
+        };
 
         var next = function(){
             Databases[schema.id].execute([method, object, options]);
@@ -560,8 +577,8 @@
             next();
         }
 
-
-    };
+    	return dfd.promise();
+    };   
 
     if(typeof exports == 'undefined'){
         Backbone.ajaxSync = Backbone.sync;
