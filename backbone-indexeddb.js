@@ -548,6 +548,7 @@
                 delete Databases[schema.id];
             }
         }
+
         var promise;
 
         if ($ && $.Deferred) {        
@@ -570,18 +571,18 @@
             
             promise = dfd.promise();
         }
+        
         var next = function(){
             Databases[schema.id].execute([method, object, options]);
         };
 
         if (!Databases[schema.id]) {
               Databases[schema.id] = new ExecutionQueue(schema,next,schema.nolog);
-            }else
-        {
+        } else {
             next();
         }
 
-    	return promise
+    	return promise;
     };   
 
     if(typeof exports == 'undefined'){
