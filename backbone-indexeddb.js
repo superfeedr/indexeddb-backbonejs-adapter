@@ -548,24 +548,28 @@
                 delete Databases[schema.id];
             }
         }
-        
-        var dfd = jQuery.Deferred();
-        var success = options.success;
-        var error = options.error;
+        var promise;
 
-        options.success = function() {
-            dfd.resolve();
-            if (success) {
-                success.apply(null, arguments);
-            }
-        };
-        options.error = function() {
-            dfd.reject();
-            if (error) {
-                error.apply(null, arguments);
-            }
-        };
+        if ($ && $.Deferred) {        
+            var dfd = $.Deferred();
+            var success = options.success;
+            var error = options.error;
 
+            options.success = function() {
+                dfd.resolve();
+                if (success) {
+                    success.apply(null, arguments);
+                }
+            };
+            options.error = function() {
+                dfd.reject();
+                if (error) {
+                    error.apply(null, arguments);
+                }
+            };
+            
+            promise = dfd.promise();
+        }
         var next = function(){
             Databases[schema.id].execute([method, object, options]);
         };
@@ -577,7 +581,7 @@
             next();
         }
 
-    	return dfd.promise();
+    	return promise
     };   
 
     if(typeof exports == 'undefined'){
