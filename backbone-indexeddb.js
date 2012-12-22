@@ -571,10 +571,10 @@
         };
 
         var error = options.error;
-        options.error = function(error) {
+        options.error = function(resp) {
             reject();
-            if (error) error(object, error, options);
-            object.trigger('error', object, error, options);
+            if (error) error(object, resp, options);
+            object.trigger('error', object, resp, options);
         };
         
         var next = function(){
