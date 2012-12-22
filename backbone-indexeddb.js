@@ -550,27 +550,32 @@
         }
 
         var promise;
+        var noop = function() {};
 
-        if ($ && $.Deferred) {        
+        if ($ && $.Deferred) {
             var dfd = $.Deferred();
-            var success = options.success;
-            var error = options.error;
+            var resolve = dfd.resolve;
+            var reject = dfd.reject;
 
-            options.success = function() {
-                dfd.resolve();
-                if (success) {
-                    success.apply(null, arguments);
-                }
-            };
-            options.error = function() {
-                dfd.reject();
-                if (error) {
-                    error.apply(null, arguments);
-                }
-            };
-            
             promise = dfd.promise();
+        } else {
+            var resolve = noop;
+            var reject = noop;
         }
+
+        var success = options.success;
+        options.success = function(resp) {
+            resolve();
+            if (success) success(object, resp, options);
+            object.trigger('sync', object, resp, options);
+        };
+
+        var error = options.error;
+        options.error = function(xhr) {
+            reject();
+            if (error) error(object, xhr, options);
+            object.trigger('error', object, xhr, options);
+        };
         
         var next = function(){
             Databases[schema.id].execute([method, object, options]);
