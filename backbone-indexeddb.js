@@ -549,19 +549,46 @@
             }
         }
 
+        var promise;
+        var noop = function() {};
+
+        if ($ && $.Deferred) {
+            var dfd = $.Deferred();
+            var resolve = dfd.resolve;
+            var reject = dfd.reject;
+
+            promise = dfd.promise();
+        } else {
+            var resolve = noop;
+            var reject = noop;
+        }
+
+        var success = options.success;
+        options.success = function(resp) {
+            resolve();
+            if (success) success(object, resp, options);
+            object.trigger('sync', object, resp, options);
+        };
+
+        var error = options.error;
+        options.error = function(resp) {
+            reject();
+            if (error) error(object, resp, options);
+            object.trigger('error', object, resp, options);
+        };
+        
         var next = function(){
             Databases[schema.id].execute([method, object, options]);
         };
 
         if (!Databases[schema.id]) {
               Databases[schema.id] = new ExecutionQueue(schema,next,schema.nolog);
-            }else
-        {
+        } else {
             next();
         }
 
-
-    };
+    	return promise;
+    };   
 
     if(typeof exports == 'undefined'){
         Backbone.ajaxSync = Backbone.sync;
