@@ -285,7 +285,6 @@
                 });
             }],
             ["read model with index", function () {
-            
                 function saveMovieAndReadWithIndex(movie) {
                     movie.save({}, {
                         success: function () {
@@ -295,7 +294,6 @@
                             });
                             movie2.fetch({
                                 success: function (object) {
-                                    console.log("FOUND! SUCCESS");
                                     // success
                                     start();
                                     equals(movie2.toJSON().title, movie.toJSON().title, "The movie should have the right title");
