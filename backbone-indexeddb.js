@@ -305,7 +305,6 @@
             var store = readTransaction.objectStore(storeName);
             var json = object.toJSON();
 
-
             var getRequest = null;
             if (json.id) {
                 getRequest = store.get(json.id);
@@ -566,7 +565,7 @@
         var success = options.success;
         options.success = function(resp) {
             resolve();
-            if (success) success(object, resp, options);
+            if (success) success(resp, options);
             object.trigger('sync', object, resp, options);
         };
 
