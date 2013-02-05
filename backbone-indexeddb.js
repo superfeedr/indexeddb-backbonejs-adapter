@@ -572,7 +572,7 @@
         var error = options.error;
         options.error = function(resp) {
             reject();
-            if (error) error(object, resp, options);
+            if (error) error(resp, options);
             object.trigger('error', object, resp, options);
         };
         
