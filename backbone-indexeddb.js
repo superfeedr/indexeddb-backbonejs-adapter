@@ -268,7 +268,7 @@
             writeRequest.onerror = function (e) {
                 options.error(e);
             };
-            writeRequest.onsuccess = function (e) {
+            writeTransaction.oncomplete = function (e) {
                 options.success(json);
             };
         },
@@ -292,7 +292,7 @@
             writeRequest.onerror = function (e) {
                 options.error(e);
             };
-            writeRequest.onsuccess = function (e) {
+            writeTransaction.oncomplete = function (e) {
                 options.success(json);
             };
         },
@@ -342,7 +342,8 @@
             var json = object.toJSON();
 
             var deleteRequest = store.delete(json.id);
-            deleteRequest.onsuccess = function (event) {
+
+            deleteTransaction.oncomplete = function (event) {
                 options.success(null);
             };
             deleteRequest.onerror = function (event) {
