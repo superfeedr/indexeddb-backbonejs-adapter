@@ -552,7 +552,7 @@
         var promise;
         var noop = function() {};
 
-        if ($ && $.Deferred) {
+        if (typeof($) != 'undefined' && $.Deferred) {
             var dfd = $.Deferred();
             var resolve = dfd.resolve;
             var reject = dfd.reject;
@@ -576,7 +576,7 @@
             if (error) error(resp, options);
             object.trigger('error', object, resp, options);
         };
-        
+
         var next = function(){
             Databases[schema.id].execute([method, object, options]);
         };
@@ -588,7 +588,7 @@
         }
 
     	return promise;
-    };   
+    };
 
     if(typeof exports == 'undefined'){
         Backbone.ajaxSync = Backbone.sync;
