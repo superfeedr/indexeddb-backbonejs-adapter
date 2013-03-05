@@ -679,12 +679,11 @@
                     }
                 });
 
-
                 // we want 5 'add' events
                 expect(5);
 
+                start();
                 theater.bind('add', function (model, collection) {
-                    start();
                     counter += 1;
                     equal(collection.length, counter)
                     // this is a bit hokey, but will do the trick.
@@ -709,38 +708,52 @@
                         equal(true, true, "The torrent should be added successfully");
                         nextTest();
                     },
-                    error: function (o, error) {
+                    error: function (object, response, error) {
                         start();
                         if (window.console && window.console.log) window.console.log(error);
-                        equal(true, false, error.error.target.webkitErrorMessage);
+                        equal(true, false, error.target.webkitErrorMessage);
                         nextTest();
                     }
                 });
             }],
             ["model update with keyPath specified", function(){
-                var torrent = new Torrent({id: 1});
-                torrent.fetch({
+
+                var t = new Torrent();
+                t.isnew = function() { return true};
+                t.save({
+                    id: 1,
+                    title: "The Matrix",
+                    format: "dvd"
+                }, {
                     success: function () {
-                        start();
-                        equal("The Matrix", torrent.get("title"), "The torrent should be fetched successfully");
-                        torrent.save({rating: 5}, {
-                          success: function() {
-                            start();
-                            equal(true, true, "The torrent should be updated succesfully");
-                            nextTest();
-                          },
-                          error: function (o, error) {
-                              start();
-                              if (window.console && window.console.log) window.console.log(error);
-                              equal(true, false, error.error.target.webkitErrorMessage);
-                              nextTest();
-                          }
+                        var torrent = new Torrent({id: 1});
+                        torrent.fetch({
+                            success: function () {
+                                start();
+                                equal("The Matrix", torrent.get("title"), "The torrent should be fetched successfully");
+                                torrent.save({rating: 5}, {
+                                    success: function() {
+                                        equal(true, true, "The torrent should be updated succesfully");
+                                        nextTest();
+                                    },
+                                    error: function (object, response, error) {
+                                      if (window.console && window.console.log) window.console.log(error);
+                                      equal(true, false, response);
+                                      nextTest();
+                                  }
+                              });
+                            },
+                            error: function (object, response, options) {
+                                if (window.console && window.console.log) window.console.log(response);
+                                equal(true, false, response);
+                                nextTest();
+                            }
                         });
                     },
-                    error: function (o, error) {
+                    error: function (object, response, error) {
                         start();
                         if (window.console && window.console.log) window.console.log(error);
-                        equal(true, false, error.error.target.webkitErrorMessage);
+                        equal(true, false, error.target.webkitErrorMessage);
                         nextTest();
                     }
                 });
@@ -751,64 +764,6 @@
 
         nextTest();
 
-
-        // First, let's see the content of the database... because I'm little worried about it!
-        // var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
-        // var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction; // No prefix in moz
-        //
-        // var dbRequest = indexedDB.open(database.id, "");
-        //
-        // var db = null;
-        // var cycles = 0;
-        //
-        // var all = [];
-        //
-        // dbRequest.onsuccess = function (e) {
-        //     db = e.target.result; // Attach the connection ot the queue.
-        //     var readTransaction = db.transaction(["movies"], IDBTransaction.READ_ONLY);
-        //     var store = readTransaction.objectStore("movies");
-        //
-        //     var index = store.index("titleIndex");
-        //     var readCursor = index.openCursor();
-        //
-        //     readCursor.onsuccess = function (e) {
-        //         var cursor = e.target.result;
-        //         if (!cursor) {
-        //             var done = _.after(all.length + 1, function(){
-        //                 console.log("----- END OF DEBUG -----");
-        //                 nextTest(tests);
-        //             })
-        //             done();
-        //             _.each(all, function (obj, index) {
-        //                 console.log("Deleting : " + JSON.stringify(obj));
-        //
-        //                 var deleteTransaction = db.transaction(["movies"], IDBTransaction.READ_WRITE);
-        //                 var store = deleteTransaction.objectStore("movies");
-        //
-        //                 var deleteRequest = store.delete(obj.id);
-        //                 deleteRequest.onsuccess = function (event) {
-        //                     console.log("OK. ONE LESS");
-        //                     done();
-        //                 };
-        //                 deleteRequest.onerror = function (event) {
-        //                     console.log("DANG")
-        //                 };
-        //             });
-        //         }
-        //         else {
-        //             all.push(cursor.value);
-        //             cursor.continue();
-        //         }
-        //     };
-        // }
-        // dbRequest.onerror = function (e) {
-        //     console.error("Couldn't not connect to the database");
-        // };
-        //
-        // dbRequest.onabort = function (e) {
-        //     console.error("Connection to the database aborted");
-        // };
-        //
         </script>
     </head>
 
