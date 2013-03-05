@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <script src="../lib/jquery-1.7.1.min.js"></script>
+        <script src="../lib/jquery.min.js"></script>
         <link rel="stylesheet" href="../lib/qunit.css" type="text/css" media="screen" />
         <script type="text/javascript" src="../lib/qunit.js"></script>
         <!-- Dependencies -->
         <script src="../lib/underscore-min.js" type="text/javascript"></script>
-        <script src="../lib/backbone.js" type="text/javascript"></script>
+        <script src="../lib/backbone-min.js" type="text/javascript"></script>
         <script src="../backbone-indexeddb.js" type="text/javascript"></script>
         <script>
 
@@ -140,7 +140,7 @@
                     },
                     error: function (o, error) {
                         start();
-                        equals(true, false, error.error.target.webkitErrorMessage);
+                        equal(true, false, error.error.target.webkitErrorMessage);
                     }
                 });
             } else {
@@ -179,13 +179,13 @@
                  }, {
                      success: function () {
                          start();
-                         equals(true, true, "The movie should be saved successfully");
+                         equal(true, true, "The movie should be saved successfully");
                          nextTest();
                      },
                      error: function (o, error) {
                          start();
                          if (window.console && window.console.log) window.console.log(error);
-                         equals(true, false, error.error.target.webkitErrorMessage);
+                         equal(true, false, error.error.target.webkitErrorMessage);
                          nextTest();
                      }
                  });
@@ -209,13 +209,13 @@
                             success: function() {
                                 // FAIL
                                 start();
-                                equals(true, false, "The dupe should not have been saved again.");
+                                equal(true, false, "The dupe should not have been saved again.");
                                 nextTest();
                             },
                             error: function() {
                                 // WI?
                                 start();
-                                equals(true, true, "The dupe should been refused.");
+                                equal(true, true, "The dupe should been refused.");
                                 nextTest();
                             }
                         });
@@ -224,7 +224,7 @@
                     error: function (o, error) {
                         start();
                         if (window.console && window.console.log) window.console.log(error);
-                        equals(true, false, error.error.target.webkitErrorMessage);
+                        equal(true, false, error.error.target.webkitErrorMessage);
                         nextTest();
                     }
                 });
@@ -237,13 +237,13 @@
                 }, {
                     success: function () {
                         start();
-                        equals(true, true, "The movie should be saved successfully");
+                        equal(true, true, "The movie should be saved successfully");
                         nextTest();
                     },
                     error: function (o, error) {
                         start();
                         if (window.console && window.console.log) window.console.log(error);
-                        equals(true, false, error.error.target.webkitErrorMessage);
+                        equal(true, false, error.error.target.webkitErrorMessage);
                         nextTest();
                     }
                 });
@@ -263,15 +263,15 @@
                             success: function (object) {
                                 // success
                                 start();
-                                equals(saved.toJSON().title, movie.toJSON().title, "The movie should have the right title");
-                                equals(saved.toJSON().format, movie.toJSON().format, "The movie should have the right format");
-                                equals(object.toJSON().title, movie.toJSON().title, "The movie should have the right title");
-                                equals(object.toJSON().format, movie.toJSON().format, "The movie should have the right format");
+                                equal(saved.toJSON().title, movie.toJSON().title, "The movie should have the right title");
+                                equal(saved.toJSON().format, movie.toJSON().format, "The movie should have the right format");
+                                equal(object.toJSON().title, movie.toJSON().title, "The movie should have the right title");
+                                equal(object.toJSON().format, movie.toJSON().format, "The movie should have the right format");
                                 nextTest();
                             },
                             error: function (object, error) {
                                 start();
-                                equals(true, false, error);
+                                equal(true, false, error);
                                 nextTest();
                                 // Failure
                             }
@@ -279,7 +279,7 @@
                     },
                     error: function (o, error) {
                         start();
-                        equals(true, false, error.error.target.webkitErrorMessage);
+                        equal(true, false, error.error.target.webkitErrorMessage);
                         nextTest();
                     }
                 });
@@ -296,25 +296,25 @@
                                 success: function (object) {
                                     // success
                                     start();
-                                    equals(movie2.toJSON().title, movie.toJSON().title, "The movie should have the right title");
-                                    equals(movie2.toJSON().format, movie.toJSON().format, "The movie should have the right format");
+                                    equal(movie2.toJSON().title, movie.toJSON().title, "The movie should have the right title");
+                                    equal(movie2.toJSON().format, movie.toJSON().format, "The movie should have the right format");
                                     nextTest();
                                 },
                                 error: function (object, error) {
                                     start();
-                                    equals(true, false, error);
+                                    equal(true, false, error);
                                     nextTest();
                                 }
                             });
                         },
                         error: function (o, error) {
                             start();
-                            equals(true, false, error.error.target.webkitErrorMessage);
+                            equal(true, false, error.error.target.webkitErrorMessage);
                             nextTest();
                         }
                     });
                 }
-            
+
                 var movie = new Movie({
                     title: "Avatar"
                 });
@@ -330,9 +330,9 @@
                         saveMovieAndReadWithIndex(movie);
                     }
                 });
-            
-            
-            
+
+
+
             }],
             ["read model that do not exist with index", function () {
                 var movie = new Movie({
@@ -342,12 +342,12 @@
                     success: function (object) {
                         // success
                         start();
-                        equals(true, false, error);
+                        equal(true, false, error);
                         nextTest();
                     },
                     error: function (object, error) {
                         start();
-                        equals(true, true, error);
+                        equal(true, true, error);
                         nextTest();
                     }
                 });
@@ -367,27 +367,27 @@
                                     success: function (object) {
                                         // success
                                         start();
-                                        equals("Star Wars, Episode V", movie.toJSON().title, "The movie should have the right title");
-                                        equals("dvd", movie.toJSON().format, "The movie should have the right format");
+                                        equal("Star Wars, Episode V", movie.toJSON().title, "The movie should have the right title");
+                                        equal("dvd", movie.toJSON().format, "The movie should have the right format");
                                         nextTest();
                                     },
                                     error: function (object, error) {
                                         start();
-                                        equals(true, false, error);
+                                        equal(true, false, error);
                                         nextTest();
                                     }
                                 });
                             },
                             error: function () {
                                 start();
-                                equals(true, false, "Would not update");
+                                equal(true, false, "Would not update");
                                 nextTest();
                             }
                         });
                     },
                     error: function (object, error) {
                         start();
-                        equals(true, false, error.error.target.webkitErrorMessage);
+                        equal(true, false, error.error.target.webkitErrorMessage);
                         nextTest();
                     }
                 });
@@ -403,16 +403,16 @@
                         movie.destroy({
                             success: function (object) {
                                 // success
-                                equals(true, true, "It should delete the object");
+                                equal(true, true, "It should delete the object");
                                 movie.fetch({
                                     success: function () {
                                         start();
-                                        equals(true, false, "Object was not deleted");
+                                        equal(true, false, "Object was not deleted");
                                         nextTest();
                                     },
                                     error: function (object, error) {
                                         start();
-                                        equals(error, "Not Found", "Object was deleted");
+                                        equal(error, "Not Found", "Object was deleted");
                                         nextTest();
                                     }
                                 });
@@ -420,7 +420,7 @@
                             error: function (object, error) {
                                 // error
                                 start();
-                                equals(true, false, error);
+                                equal(true, false, error);
                                 nextTest();
                             }
                         });
@@ -428,7 +428,7 @@
                     error: function (error) {
                         // error
                         start();
-                        equals(true, false, error.error.target.webkitErrorMessage);
+                        equal(true, false, error.error.target.webkitErrorMessage);
                         nextTest();
                     }
                 });
@@ -443,9 +443,9 @@
                                 theater.fetch({
                                     success: function () {
                                         start();
-                                        equals(theater.models.length, 5, "Should have 5 elements");
+                                        equal(theater.models.length, 5, "Should have 5 elements");
                                         deepEqual(theater.pluck("title"), ["Hello", "Bonjour", "Halo", "Nihao", "Ciao"], "Should have [\"Hello\", \"Bonjour\", \"Halo\", \"Nihao\", \"Ciao\"]");
-            
+
                                         nextTest();
                                     }
                                 });
@@ -466,7 +466,7 @@
                                     limit: 3,
                                     success: function () {
                                         start();
-                                        equals(theater.models.length, 3, "Should have 3 elements");
+                                        equal(theater.models.length, 3, "Should have 3 elements");
                                         deepEqual(theater.pluck("title"), ["Hello", "Bonjour", "Halo"], "Should have [\"Hello\", \"Bonjour\", \"Halo\"]");
                                         nextTest();
                                     }
@@ -488,7 +488,7 @@
                                     offset: 2,
                                     success: function () {
                                         start();
-                                        equals(theater.models.length, 3, "Should have 3 elements");
+                                        equal(theater.models.length, 3, "Should have 3 elements");
                                         deepEqual(theater.pluck("title"), ["Halo", "Nihao", "Ciao"], "Should have [\"Halo\", \"Nihao\", \"Ciao\"]");
                                         nextTest();
                                     }
@@ -511,7 +511,7 @@
                                     limit: 2,
                                     success: function () {
                                         start();
-                                        equals(theater.models.length, 2, "Should have 2 elements");
+                                        equal(theater.models.length, 2, "Should have 2 elements");
                                         deepEqual(theater.pluck("title"), ["Bonjour", "Halo"], "Should have [\"Bonjour\", \"Halo\"]");
                                         nextTest();
                                     }
@@ -533,7 +533,7 @@
                                     range: ["1.5", "4.5"],
                                     success: function () {
                                         start();
-                                        equals(theater.models.length, 3, "Should have 3 elements");
+                                        equal(theater.models.length, 3, "Should have 3 elements");
                                         deepEqual(theater.pluck("title"), ["Bonjour", "Halo", "Nihao"], "Should have [\"Bonjour\", \"Halo\", \"Nihao\"]");
                                         nextTest();
                                     }
@@ -557,7 +557,7 @@
                                     },
                                     success: function () {
                                         start();
-                                        equals(theater.models.length, 2, "Should have 2 elements");
+                                        equal(theater.models.length, 2, "Should have 2 elements");
                                         deepEqual(theater.pluck("title"), ["Bonjour", "Ciao"], "Should have [\"Bonjour\", \"Ciao\"]");
                                         nextTest();
                                     }
@@ -581,7 +581,7 @@
                                     },
                                     success: function () {
                                         start();
-                                        equals(theater.models.length, 4, "Should have 4 elements");
+                                        equal(theater.models.length, 4, "Should have 4 elements");
                                         deepEqual(theater.pluck("title"), ["Hello", "Halo", "Bonjour", "Ciao"], "Should have [\"Hello\", \"Halo\", \"Bonjour\", \"Ciao\"]");
                                         nextTest();
                                     }
@@ -606,7 +606,7 @@
                                     },
                                     success: function () {
                                         start();
-                                        equals(theater.models.length, 2, "Should have 2 elements");
+                                        equal(theater.models.length, 2, "Should have 2 elements");
                                         deepEqual(theater.pluck("title"), ["Hello", "Halo"], "Should have [\"Hello\", \"Halo\"]");
                                         nextTest();
                                     }
@@ -632,7 +632,7 @@
                                     },
                                     success: function () {
                                         start();
-                                        equals(theater.models.length, 2, "Should have 2 elements");
+                                        equal(theater.models.length, 2, "Should have 2 elements");
                                         deepEqual(theater.pluck("title"), ["Bonjour", "Ciao"], "Should have [\"Bonjour\", \"Ciao\"]");
                                         nextTest();
                                     }
@@ -656,7 +656,7 @@
                                     },
                                     success: function () {
                                         start();
-                                        equals(theater.models.length, 4, "Should have 4 elements");
+                                        equal(theater.models.length, 4, "Should have 4 elements");
                                         deepEqual(theater.pluck("title"), ["Ciao", "Bonjour", "Halo", "Hello"], "Should have [\"Ciao\", \"Bonjour\", \"Halo\", \"Hello\"]");
                                         nextTest();
                                     }
@@ -678,11 +678,11 @@
                         // console.log('error callback', arguments);
                     }
                 });
-            
-            
+
+
                 // we want 5 'add' events
                 expect(5);
-            
+
                 theater.bind('add', function (model, collection) {
                     start();
                     counter += 1;
@@ -693,7 +693,7 @@
             }],
             ["support for model specific sync override", function(){
               start();
-              equals(typeof Backbone.ajaxSync,'function', "should not be the original Backbone.sync function" );
+              equal(typeof Backbone.ajaxSync,'function', "should not be the original Backbone.sync function" );
               nextTest();
             }],
             ["model add with keyPath specified", function(){
@@ -706,13 +706,13 @@
                 }, {
                     success: function () {
                         start();
-                        equals(true, true, "The torrent should be added successfully");
+                        equal(true, true, "The torrent should be added successfully");
                         nextTest();
                     },
                     error: function (o, error) {
                         start();
                         if (window.console && window.console.log) window.console.log(error);
-                        equals(true, false, error.error.target.webkitErrorMessage);
+                        equal(true, false, error.error.target.webkitErrorMessage);
                         nextTest();
                     }
                 });
@@ -722,17 +722,17 @@
                 torrent.fetch({
                     success: function () {
                         start();
-                        equals("The Matrix", torrent.get("title"), "The torrent should be fetched successfully");
+                        equal("The Matrix", torrent.get("title"), "The torrent should be fetched successfully");
                         torrent.save({rating: 5}, {
                           success: function() {
                             start();
-                            equals(true, true, "The torrent should be updated succesfully");
+                            equal(true, true, "The torrent should be updated succesfully");
                             nextTest();
                           },
                           error: function (o, error) {
                               start();
                               if (window.console && window.console.log) window.console.log(error);
-                              equals(true, false, error.error.target.webkitErrorMessage);
+                              equal(true, false, error.error.target.webkitErrorMessage);
                               nextTest();
                           }
                         });
@@ -740,7 +740,7 @@
                     error: function (o, error) {
                         start();
                         if (window.console && window.console.log) window.console.log(error);
-                        equals(true, false, error.error.target.webkitErrorMessage);
+                        equal(true, false, error.error.target.webkitErrorMessage);
                         nextTest();
                     }
                 });
@@ -748,43 +748,43 @@
         ];
 
         // Let's go run the tests
-        
+
         nextTest();
-        
-        
+
+
         // First, let's see the content of the database... because I'm little worried about it!
         // var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
         // var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction; // No prefix in moz
-        // 
+        //
         // var dbRequest = indexedDB.open(database.id, "");
-        // 
+        //
         // var db = null;
         // var cycles = 0;
-        // 
+        //
         // var all = [];
-        // 
+        //
         // dbRequest.onsuccess = function (e) {
         //     db = e.target.result; // Attach the connection ot the queue.
         //     var readTransaction = db.transaction(["movies"], IDBTransaction.READ_ONLY);
         //     var store = readTransaction.objectStore("movies");
-        // 
+        //
         //     var index = store.index("titleIndex");
         //     var readCursor = index.openCursor();
-        // 
+        //
         //     readCursor.onsuccess = function (e) {
         //         var cursor = e.target.result;
         //         if (!cursor) {
         //             var done = _.after(all.length + 1, function(){
         //                 console.log("----- END OF DEBUG -----");
         //                 nextTest(tests);
-        //             }) 
+        //             })
         //             done();
         //             _.each(all, function (obj, index) {
         //                 console.log("Deleting : " + JSON.stringify(obj));
-        //                 
+        //
         //                 var deleteTransaction = db.transaction(["movies"], IDBTransaction.READ_WRITE);
         //                 var store = deleteTransaction.objectStore("movies");
-        // 
+        //
         //                 var deleteRequest = store.delete(obj.id);
         //                 deleteRequest.onsuccess = function (event) {
         //                     console.log("OK. ONE LESS");
@@ -797,21 +797,21 @@
         //         }
         //         else {
         //             all.push(cursor.value);
-        //             cursor.continue(); 
+        //             cursor.continue();
         //         }
         //     };
         // }
         // dbRequest.onerror = function (e) {
         //     console.error("Couldn't not connect to the database");
         // };
-        // 
+        //
         // dbRequest.onabort = function (e) {
         //     console.error("Connection to the database aborted");
         // };
-        // 
+        //
         </script>
     </head>
-    
+
     <body>
         <h1 id="qunit-header">
             Inbox QUnit test

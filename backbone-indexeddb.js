@@ -566,14 +566,14 @@
         var success = options.success;
         options.success = function(resp) {
             resolve();
-            if (success) success(resp, options);
+            if (success) success(object, resp, options);
             object.trigger('sync', object, resp, options);
         };
 
         var error = options.error;
         options.error = function(resp) {
             reject();
-            if (error) error(resp, options);
+            if (error) error(object, resp, options);
             object.trigger('error', object, resp, options);
         };
 
