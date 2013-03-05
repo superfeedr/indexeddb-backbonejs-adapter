@@ -260,17 +260,17 @@
             if (json.id === undefined) json.id = guid();
             if (json.id === null) delete json.id;
 
-            if (!store.keyPath)
-              writeRequest = store.add(json, json.id);
-            else
-              writeRequest = store.add(json);
-
-            writeRequest.onerror = function (e) {
+            writeTransaction.onerror = function (e) {
                 options.error(e);
             };
             writeTransaction.oncomplete = function (e) {
                 options.success(json);
             };
+
+            if (!store.keyPath)
+                writeRequest = store.add(json, json.id);
+            else
+                writeRequest = store.add(json);
         },
 
         // Writes the json to the storeName in db. It is an update operation, which means it will overwrite the value if the key already exist
