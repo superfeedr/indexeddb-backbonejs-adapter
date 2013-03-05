@@ -8,10 +8,19 @@
     "url": "git://github.com/superfeedr/indexeddb-backbonejs-adapter.git"
   },
   "main": "backbone-indexeddb.js",
-  "dependencies": {
-       "backbone": "*"
-      ,"underscore": "*"
+  "scripts": {
+    "start": "grunt",
+    "test": "grunt test"
   },
-  "devDependencies": {},
+  "dependencies": {
+    "backbone": "*",
+    "underscore": "*"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.0",
+    "grunt-contrib-connect": "~0.1.2",
+    "grunt-contrib-watch": "~0.3.1",
+    "grunt-saucelabs": "~3.0.1"
+  },
   "optionalDependencies": {}
 }
