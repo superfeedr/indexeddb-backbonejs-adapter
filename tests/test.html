@@ -744,6 +744,29 @@
                         nextTest();
                     }
                 });
+            }],
+            ["Use AjaxSync when no database is specified", function(){
+                var testModel = Backbone.Model.extend({});
+
+                var testCollection = Backbone.Collection.extend({
+                    model: testModel,
+                    url: "mockAjax.json"
+                });
+
+                var testCollectionInstance = new testCollection();
+
+                testCollectionInstance.fetch({
+                    success: function(){
+                        start();
+                        equal(testCollectionInstance.length, 2, "Collection successfully fetched");
+                        nextTest();
+                    },
+                    error : function(){
+                        start();
+                        ok(false, "Collection not fetched");
+                        nextTest();
+                    }
+                });
             }]
         ];
 
