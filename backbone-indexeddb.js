@@ -541,6 +541,11 @@
             return;
         }
 
+        // If a model or a collection does not define a database, fall back on ajaxSync
+        if (typeof object.database === 'undefined' && typeof Backbone.ajaxSync === 'function'){
+            return Backbone.ajaxSync(method, object, options);
+        }
+
         var schema = object.database;
         if (Databases[schema.id]) {
             if(Databases[schema.id].version != _.last(schema.migrations).version){
