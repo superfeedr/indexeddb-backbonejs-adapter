@@ -9,9 +9,13 @@
         return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
     }
 
+    var Backbone, _;
     if(typeof exports !== 'undefined'){
         _ = require('underscore');
         Backbone = require('backbone');
+    } else {
+        _ = window._;
+        Backbone = window.Backbone;
     }
 
 
