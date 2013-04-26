@@ -250,8 +250,7 @@
             var json = object.toJSON();
             var writeRequest;
 
-            if (json.id === undefined) json.id = guid();
-            if (json.id === null) delete json.id;
+            if (json.id === undefined && !store.autoIncrement) json.id = guid();
 
             writeTransaction.onerror = function (e) {
                 options.error(e);
