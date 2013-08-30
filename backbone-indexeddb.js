@@ -498,6 +498,7 @@
             _.each(this.stack, function (message) {
                 this.execute(message);
             }.bind(this));
+            this.stack = [];    // fix memory leak
             this.next();
         },
 
