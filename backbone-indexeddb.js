@@ -505,7 +505,7 @@
         // Executes a given command on the driver. If not started, just stacks up one more element.
         execute: function (message) {
             if (this.started) {
-                this.driver.execute(message[1].storeName, message[0], message[1], message[2]); // Upon messages, we execute the query
+                this.driver.execute(message[2].storeName || message[1].storeName, message[0], message[1], message[2]); // Upon messages, we execute the query
             } else {
                 this.stack.push(message);
             }
