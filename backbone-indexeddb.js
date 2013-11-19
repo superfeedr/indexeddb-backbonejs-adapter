@@ -301,7 +301,6 @@
             if (json.id) {
                 getRequest = store.get(json.id);
             } else if(options.index) {
-                console.log('index', options.index);
                 var index = store.index(options.index.name);
                 getRequest = index.get(options.index.value);
             } else {
