@@ -300,6 +300,10 @@
             var getRequest = null;
             if (json.id) {
                 getRequest = store.get(json.id);
+            } else if(options.index) {
+                console.log('index', options.index);
+                var index = store.index(options.index.name);
+                getRequest = index.get(options.index.value);
             } else {
                 // We need to find which index we have
                 var cardinality = 0; // try to fit the index with most matches

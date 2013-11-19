@@ -38,7 +38,7 @@
                     store.createIndex("formatIndex", "format", {
                         unique: false
                     });
-                    store.createIndex("title, format", ["title", "format"], {
+                    store.createIndex("titleAndFormat", ["title", "format"], {
                         unique: false
                     });
                     next();
@@ -367,6 +367,7 @@
                                 success: function (object) {
                                     // success
                                     start();
+                                    equal(movie2.id, movie.id, "The movie should have the right id");
                                     equal(movie2.toJSON().title, movie.toJSON().title, "The movie should have the right title");
                                     equal(movie2.toJSON().format, movie.toJSON().format, "The movie should have the right format");
                                     nextTest();
@@ -389,6 +390,47 @@
                 var movie = new Movie({
                     title: "Halo",
                     format: "dvd"
+                });
+                saveMovieAndReadWithIndex(movie);
+
+            }],
+            ["read model with index options", function() {
+                function saveMovieAndReadWithIndex(movie) {
+                    movie.save({}, {
+                        success: function () {
+                            // Ok, now we need to create a new movie object and retrieve it
+                            var movie2 = new Movie({
+                            });
+                            movie2.fetch({
+                                index: {
+                                    name: 'titleAndFormat',
+                                    value: ['Django Unchained', 'blueray']
+                                },
+                                success: function (object) {
+                                    // success
+                                    start();
+                                    equal(movie2.toJSON().title, movie.toJSON().title, "The movie should have the right title");
+                                    equal(movie2.toJSON().format, movie.toJSON().format, "The movie should have the right format");
+                                    nextTest();
+                                },
+                                error: function (object, error) {
+                                    start();
+                                    equal(true, false, error);
+                                    nextTest();
+                                }
+                            });
+                        },
+                        error: function (o, error) {
+                            start();
+                            equal(true, false, error.error.target.webkitErrorMessage);
+                            nextTest();
+                        }
+                    });
+                }
+
+                var movie = new Movie({
+                    title: "Django Unchained",
+                    format: "blueray"
                 });
                 saveMovieAndReadWithIndex(movie);
 
