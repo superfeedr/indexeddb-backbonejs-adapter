@@ -409,6 +409,7 @@
                                 success: function (object) {
                                     // success
                                     start();
+                                    equal(movie2.id, movie.id, "The movie should have the right id");
                                     equal(movie2.toJSON().title, movie.toJSON().title, "The movie should have the right title");
                                     equal(movie2.toJSON().format, movie.toJSON().format, "The movie should have the right format");
                                     nextTest();
