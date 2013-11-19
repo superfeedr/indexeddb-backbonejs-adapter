@@ -319,7 +319,7 @@
                         // compound index
                         var valid = true;
                         var keyValue = _.map(index.keyPath, function(keyPart) {
-                            valid = valid && json[keyPart];
+                            valid = valid && json[keyPart] !== undefined;
                             return json[keyPart];
                         });
                         if(valid) {
