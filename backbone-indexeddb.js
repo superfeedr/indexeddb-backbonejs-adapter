@@ -300,12 +300,31 @@
             var getRequest = null;
             if (json.id) {
                 getRequest = store.get(json.id);
+            } else if(options.index) {
+                var index = store.index(options.index.name);
+                getRequest = index.get(options.index.value);
             } else {
                 // We need to find which index we have
+                var cardinality = 0; // try to fit the index with most matches
                 _.each(store.indexNames, function (key, index) {
                     index = store.index(key);
-                    if (json[index.keyPath] && !getRequest) {
-                        getRequest = index.get(json[index.keyPath]);
+                    if(typeof index.keyPath === 'string' && 1 > cardinality) {
+                        // simple index
+                        if (json[index.keyPath] !== undefined) {
+                            getRequest = index.get(json[index.keyPath]);
+                            cardinality = 1;
+                        }
+                    } else if(typeof index.keyPath === 'object' && index.keyPath.length > cardinality) {
+                        // compound index
+                        var valid = true;
+                        var keyValue = _.map(index.keyPath, function(keyPart) {
+                            valid = valid && json[keyPart] !== undefined;
+                            return json[keyPart];
+                        });
+                        if(valid) {
+                            getRequest = index.get(keyValue);
+                            cardinality = index.keyPath.length;
+                        }
                     }
                 });
             }
