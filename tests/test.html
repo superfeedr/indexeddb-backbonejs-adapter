@@ -38,6 +38,9 @@
                     store.createIndex("formatIndex", "format", {
                         unique: false
                     });
+                    store.createIndex("title, format", ["title", "format"], {
+                        unique: false
+                    });
                     next();
                 }
             }
@@ -350,6 +353,45 @@
                         nextTest();
                     }
                 });
+            }],
+            ["read model with compound index", function() {
+                function saveMovieAndReadWithIndex(movie) {
+                    movie.save({}, {
+                        success: function () {
+                            // Ok, now we need to create a new movie object and retrieve it
+                            var movie2 = new Movie({
+                                title: "Halo",
+                                format: "dvd"
+                            });
+                            movie2.fetch({
+                                success: function (object) {
+                                    // success
+                                    start();
+                                    equal(movie2.toJSON().title, movie.toJSON().title, "The movie should have the right title");
+                                    equal(movie2.toJSON().format, movie.toJSON().format, "The movie should have the right format");
+                                    nextTest();
+                                },
+                                error: function (object, error) {
+                                    start();
+                                    equal(true, false, error);
+                                    nextTest();
+                                }
+                            });
+                        },
+                        error: function (o, error) {
+                            start();
+                            equal(true, false, error.error.target.webkitErrorMessage);
+                            nextTest();
+                        }
+                    });
+                }
+
+                var movie = new Movie({
+                    title: "Halo",
+                    format: "dvd"
+                });
+                saveMovieAndReadWithIndex(movie);
+
             }],
             ["update model", function () {
                 var movie = new Movie();
