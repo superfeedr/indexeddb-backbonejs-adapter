@@ -56,6 +56,26 @@
                 }
             }
         );
+        var databasev4 = $.extend(true, {}, databasev3);
+        databasev4.migrations.push(
+            {
+                version: 4,
+                migrate: function (transaction, next) {
+
+				var store = undefined;
+                    if(!transaction.db.objectStoreNames.contains("reviews")){
+                    	store = transaction.db.createObjectStore("reviews", {keyPath: "_id"});
+                    }
+                    store = transaction.objectStore("reviews");
+
+                	store.createIndex("titleIndex", "title", {
+                        unique: false
+                    });
+
+                    next();
+                }
+            }
+        );
 
         var Moviev1 = Backbone.Model.extend({
             database: databasev1,
@@ -71,12 +91,23 @@
             database: databasev3,
             storeName: "torrents"
         });
+		var Review = Backbone.Model.extend({
+            database: databasev4,
+            storeName: "reviews",
+            idAttribute : '_id'
+        });
 
         var Theater = Backbone.Collection.extend({
             database: databasev2,
             storeName: "movies",
             model: Movie
         });
+		var Blog = Backbone.Collection.extend({
+            database: databasev4,
+            storeName: "reviews",
+            model: Review
+        });
+
 
         function deleteDB(dbObj) {
             try {
@@ -800,6 +831,7 @@
                     }
                 });
             }],
+			
             ["model update with keyPath specified", function(){
 
                 var t = new Torrent();
@@ -840,6 +872,173 @@
                         equal(true, false, error.target.webkitErrorMessage);
                         nextTest();
                     }
+                });
+            }],
+			["model add with idAttribute specified", function(){
+                var review = new Review();
+                review.isnew = function() { return true};
+                review.save({
+                    title: "The Matrix",
+                    content : "masterpiece"
+                }, {
+                    success: function () {
+                        start();
+                        equal(review.id, review.get('_id'), "The review should be added successfully with idAttribute");
+                        nextTest();
+                    },
+                    error: function (object, response, error) {
+                        start();
+                        if (window.console && window.console.log) window.console.log(error);
+                        equal(true, false, error.target.webkitErrorMessage);
+                        nextTest();
+                    }
+                });
+            }],
+			["model update with idAttribute ", function(){
+
+                var r = new Review();
+                r.isnew = function() { return true};
+                r.save({
+                    title: "The Matrix",
+                    content : "ingenious"
+                }, {
+                    success: function () {
+                        var review = new Review({ _id: r.id});
+
+                        review.fetch({
+                            success: function () {
+                                start();
+                                equal("The Matrix", review.get("title"), "The review should be fetched successfully");
+                                review.save({title : "The Matrix Reloaded"}, {
+                                    success: function() {
+                                        equal(true, true, "The review should be updated succesfully");
+                                        nextTest();
+                                    },
+                                    error: function (object, response, error) {
+                                      if (window.console && window.console.log) window.console.log(error);
+                                      equal(true, false, response);
+                                      nextTest();
+                                  }
+                              });
+                            },
+                            error: function (object, response, options) {
+                                if (window.console && window.console.log) window.console.log(response);
+                                equal(true, false, response);
+                                nextTest();
+                            }
+                        });
+                    },
+                    error: function (object, response, error) {
+                        start();
+                        if (window.console && window.console.log) window.console.log(error);
+                        equal(true, false, error.target.webkitErrorMessage);
+                        nextTest();
+                    }
+                });
+            }],
+			["read model with idAttribute and index", function () {
+                function saveReviewAndReadWithIndex(review) {
+                    review.save({}, {
+                        success: function () {
+                            // Ok, now we need to create a new review object and retrieve it
+                            var review2 = new Review({
+                                title: "Avatar"
+                            });
+                            review2.fetch({
+                                success: function (object) {
+                                    // success
+                                    start();
+                                    equal(review2.toJSON().title, review.toJSON().title, "The review should have the right title");
+                                    equal(review2.toJSON().format, review.toJSON().format, "The review should have the right format");
+                                    nextTest();
+                                },
+                                error: function (object, error) {
+                                    start();
+                                    equal(true, false, error);
+                                    nextTest();
+                                }
+                            });
+                        },
+                        error: function (o, error) {
+                            start();
+                            equal(true, false, error.error.target.webkitErrorMessage);
+                            nextTest();
+                        }
+                    });
+                }
+
+                var review = new Review({
+                    title: "Avatar"
+                });
+                review.fetch({
+                    success: function () {
+                        review.destroy({
+                            success: function () {
+                                saveReviewAndReadWithIndex(review);
+                            }
+                        });
+                    },
+                    error: function () {
+                        saveReviewAndReadWithIndex(review);
+                    }
+                });
+            }],
+			["delete model with idAttribute", function () {
+                var review = new Review();
+                review.save({
+                    title: "Avatar",
+                    content : "Great production values"
+                }, {
+                    success: function (object) {
+                        // success
+                        review.destroy({
+                            success: function (object) {
+                                // success
+                                equal(true, true, "It should delete the object");
+                                review.fetch({
+                                    success: function () {
+                                        start();
+                                        equal(true, false, "Object was not deleted");
+                                        nextTest();
+                                    },
+                                    error: function (object, error) {
+                                        start();
+                                        equal(error, "Not Found", "Object was deleted");
+                                        nextTest();
+                                    }
+                                });
+                            },
+                            error: function (object, error) {
+                                // error
+                                start();
+                                equal(true, false, error);
+                                nextTest();
+                            }
+                        });
+                    },
+                    error: function (error) {
+                        // error
+                        start();
+                        equal(true, false, error.error.target.webkitErrorMessage);
+                        nextTest();
+                    }
+                });
+            }],
+			["read idAttribute collection with no options", function () {
+                var blog = new Blog();
+                blog.fetch({
+                    success: function () {
+						
+                   		start();
+                        equal(blog.length, 3, "Successfully fetched three models");
+                        nextTest();
+                    },
+					error: function (object, error) {
+                   		start();
+                        equal(true, false, "could not fetch the collection properly");
+                        nextTest();
+                    }
+
                 });
             }],
             ["Use AjaxSync when no database is specified", function(){
