@@ -247,10 +247,10 @@
             var writeTransaction = this.db.transaction([storeName], 'readwrite');
             //this._track_transaction(writeTransaction);
             var store = writeTransaction.objectStore(storeName);
-            var json = object.toJSON();
             var writeRequest;
-
-            if (json.id === undefined && !store.autoIncrement) json.id = guid();
+			
+            if (object.id === undefined && !store.autoIncrement) object.set(object.idAttribute , guid() );
+            var json = object.toJSON();
 
             writeTransaction.onerror = function (e) {
                 options.error(e);
@@ -260,7 +260,7 @@
             };
 
             if (!store.keyPath)
-                writeRequest = store.add(json, json.id);
+                writeRequest = store.add(json, object.id);
             else
                 writeRequest = store.add(json);
         },
@@ -271,13 +271,13 @@
             var writeTransaction = this.db.transaction([storeName], 'readwrite');
             //this._track_transaction(writeTransaction);
             var store = writeTransaction.objectStore(storeName);
-            var json = object.toJSON();
             var writeRequest;
 
-            if (!json.id) json.id = guid();
+            if (!object.id ) object.set(object.idAttribute , guid() );
+            var json = object.toJSON();
 
             if (!store.keyPath)
-              writeRequest = store.put(json, json.id);
+              writeRequest = store.put(json, object.id);
             else
               writeRequest = store.put(json);
 
@@ -298,8 +298,8 @@
             var json = object.toJSON();
 
             var getRequest = null;
-            if (json.id) {
-                getRequest = store.get(json.id);
+            if (object.id) {
+                getRequest = store.get(object.id);
             } else if(options.index) {
                 var index = store.index(options.index.name);
                 getRequest = index.get(options.index.value);
@@ -352,7 +352,7 @@
             var store = deleteTransaction.objectStore(storeName);
             var json = object.toJSON();
 
-            var deleteRequest = store.delete(json.id);
+            var deleteRequest = store.delete(object.id);
 
             deleteTransaction.oncomplete = function (event) {
                 options.success(null);
