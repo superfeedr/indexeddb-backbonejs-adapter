@@ -298,7 +298,9 @@
             var json = object.toJSON();
 
             var getRequest = null;
-            if (json.id) {
+			if (store.keyPath && object.get(store.keyPath)) {
+				getRequest = store.get(object.get(store.keyPath));
+            } else if (json.id) {
                 getRequest = store.get(json.id);
             } else if(options.index) {
                 var index = store.index(options.index.name);
@@ -352,7 +354,11 @@
             var store = deleteTransaction.objectStore(storeName);
             var json = object.toJSON();
 
-            var deleteRequest = store.delete(json.id);
+            var deleteRequest;
+			if (!store.keyPath)
+				deleteRequest = store.delete(json.id);
+			else
+				deleteRequest = store.delete(object.get(store.keyPath)); 
 
             deleteTransaction.oncomplete = function (event) {
                 options.success(null);
