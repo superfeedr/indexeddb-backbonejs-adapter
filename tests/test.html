@@ -51,7 +51,7 @@
             {
                 version: 3,
                 migrate: function (transaction, next) {
-                    var store = transaction.db.createObjectStore("torrents", {keyPath: "id"});
+                    var store = transaction.db.createObjectStore("torrents", {keyPath: "keyPathId"});
                     next();
                 }
             }
@@ -69,7 +69,8 @@
 
         var Torrent = Backbone.Model.extend({
             database: databasev3,
-            storeName: "torrents"
+            storeName: "torrents",
+			idAttribute: 'keyPathId',
         });
 
         var Theater = Backbone.Collection.extend({
@@ -783,7 +784,7 @@
                 var torrent = new Torrent();
                 torrent.isnew = function() { return true};
                 torrent.save({
-                    id: 1,
+                    keyPathId: 1,
                     title: "The Matrix",
                     format: "dvd"
                 }, {
@@ -801,16 +802,16 @@
                 });
             }],
             ["model update with keyPath specified", function(){
-
                 var t = new Torrent();
                 t.isnew = function() { return true};
                 t.save({
-                    id: 1,
+                    keyPathId: 1,
+					id: "fakeId1",
                     title: "The Matrix",
                     format: "dvd"
                 }, {
                     success: function () {
-                        var torrent = new Torrent({id: 1});
+                        var torrent = new Torrent({keyPathId: 1});
                         torrent.fetch({
                             success: function () {
                                 start();
@@ -828,6 +829,7 @@
                               });
                             },
                             error: function (object, response, options) {
+                                start();
                                 if (window.console && window.console.log) window.console.log(response);
                                 equal(true, false, response);
                                 nextTest();
@@ -837,7 +839,61 @@
                     error: function (object, response, error) {
                         start();
                         if (window.console && window.console.log) window.console.log(error);
-                        equal(true, false, error.target.webkitErrorMessage);
+                        equal(true, false, response);
+                        nextTest();
+                    }
+                });
+            }],
+            ["model delete with keyPath specified", function(){
+                var t = new Torrent();
+                t.isnew = function() { return true};
+                t.save({
+                    keyPathId: 1,
+					id: "fakeId1",
+                    title: "The Matrix",
+                    format: "dvd"
+                }, {
+                    success: function () {
+                        var torrent = new Torrent({keyPathId: 1});
+                        torrent.fetch({
+                            success: function () {
+                                start();
+                                equal("The Matrix", torrent.get("title"), "The torrent should be fetched successfully");
+                                torrent.destroy({
+                                    success: function() {
+                                        equal(true, true, "The torrent should be deleted succesfully");
+										var torrent2 = new Torrent({keyPathId: 1});
+										torrent.fetch({
+											success: function () {
+												equal(true, false, "The torrent should not be fetched successfully after delete");
+												nextTest();
+											},
+											error: function (object, response, error) {
+												if (window.console && window.console.log) window.console.log(error);
+												equal(true, true, "The torrent should not be fetched successfully after delete");
+												nextTest();
+											}
+										});
+                                    },
+                                    error: function (object, response, error) {
+                                      if (window.console && window.console.log) window.console.log(error);
+                                      equal(true, false, response);
+                                      nextTest();
+                                  }
+                              });
+                            },
+                            error: function (object, response, options) {
+                                start();
+                                if (window.console && window.console.log) window.console.log(response);
+                                equal(true, false, response);
+                                nextTest();
+                            }
+                        });
+                    },
+                    error: function (object, response, error) {
+                        start();
+                        if (window.console && window.console.log) window.console.log(error);
+                        equal(true, false, response);
                         nextTest();
                     }
                 });
