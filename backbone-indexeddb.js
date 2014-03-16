@@ -569,7 +569,7 @@
         var promise;
         var noop = function() {};
 
-        if (typeof(Backbone.$) != 'undefined' && Backbone.$.Deferred) {
+        if (typeof Backbone.$ !== 'undefined' && typeof Backbone.$.Deferred !== 'undefined') {
             var dfd = Backbone.$.Deferred();
             var resolve = dfd.resolve;
             var reject = dfd.reject;
