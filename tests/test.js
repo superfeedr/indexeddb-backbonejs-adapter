@@ -741,25 +741,14 @@ var tests = [
     ["support for the 'addIndividually' property", function () {
         var counter = 0,
             theater = new Theater();
-        theater.fetch({
-            addIndividually: true,
-            success: function () {
-                // console.log('success callback', arguments);
-            },
-            error: function () {
-                // console.log('error callback', arguments);
-            }
-        });
 
-        // we want 5 'add' events
-        expect(5);
-
-        start();
-        theater.bind('add', function (model, collection) {
-            counter += 1;
-            equal(collection.length, counter)
-            // this is a bit hokey, but will do the trick.
-            if (collection.length === 5) nextTest();
+        addAllMovies(null, function () {
+            expect(5);
+            start();
+            theater.bind('add', function (model, collection) {
+                equal(collection.length, ++counter);
+            });
+            theater.fetch({ addIndividually: true }).always(nextTest);
         });
     }],
     ["support for model specific sync override", function(){

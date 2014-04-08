@@ -15,6 +15,8 @@ module.exports = function(grunt) {
                     username: 'idbbackbone',
                     key: '6ffa8cb3-47f3-4532-aedb-aee964d0eefb',
                     urls: ['http://127.0.0.1:9999/tests/test.html'],
+                    build: process.env.TRAVIS_JOB_ID,
+                    concurrency: 2,
                     testname: 'qunit tests',
                     browsers: [{
                         browserName: 'chrome',
