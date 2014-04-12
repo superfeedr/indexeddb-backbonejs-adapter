@@ -567,17 +567,17 @@
         }
 
         var promise;
-        var noop = function() {};
 
-        if (typeof($) != 'undefined' && $.Deferred) {
-            var dfd = $.Deferred();
+        if (typeof Backbone.$ === 'undefined' || typeof Backbone.$.Deferred === 'undefined') {
+            var noop = function() {};
+            var resolve = noop;
+            var reject = noop;
+        } else {
+            var dfd = Backbone.$.Deferred();
             var resolve = dfd.resolve;
             var reject = dfd.reject;
 
             promise = dfd.promise();
-        } else {
-            var resolve = noop;
-            var reject = noop;
         }
 
         var success = options.success;
