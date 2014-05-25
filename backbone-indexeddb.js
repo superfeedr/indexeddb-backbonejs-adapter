@@ -1,4 +1,18 @@
-(function () { /*global _: false, Backbone: false */
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module.
+        define(['backbone', 'underscore'], factory);
+    } else if (typeof exports === 'object') {
+        // Node. Does not work with strict CommonJS, but
+        // only CommonJS-like environments that support module.exports,
+        // like Node.
+        module.exports = factory(require('backbone'), require('underscore'));
+    } else {
+        // Browser globals (root is window)
+        root.returnExports = factory(root.Backbone, root._);
+    }
+}(this, function (Backbone, _) {
+
     // Generate four random hex digits.
     function S4() {
         return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
@@ -8,16 +22,6 @@
     function guid() {
         return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
     }
-
-    var Backbone, _;
-    if(typeof exports !== 'undefined'){
-        _ = require('underscore');
-        Backbone = require('backbone');
-    } else {
-        _ = window._;
-        Backbone = window.Backbone;
-    }
-
 
      // Naming is a mess!
      var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB ;
@@ -607,14 +611,8 @@
     	return promise;
     };
 
-    if(typeof exports == 'undefined'){
-        Backbone.ajaxSync = Backbone.sync;
-        Backbone.sync = sync;
-    }
-    else {
-        exports.sync = sync;
-        exports.debugLog = debugLog;
-    }
+    Backbone.ajaxSync = Backbone.sync;
+    Backbone.sync = sync;
 
-    //window.addEventListener("unload",function(){Backbone.sync("closeall")})
-})();
+    return { sync: sync, debugLog: debugLog};
+}));
