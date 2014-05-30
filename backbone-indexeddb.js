@@ -30,7 +30,8 @@
 
      window.IDBCursor = window.IDBCursor || window.webkitIDBCursor ||  window.mozIDBCursor ||  window.msIDBCursor ;
 
-
+    if ( _(indexedDB).isUndefined() ) { return; }
+    
     // Driver object
     // That's the interesting part.
     // There is a driver for each schema provided. The schema is a te combination of name (for the database), a version as well as migrations to reach that
