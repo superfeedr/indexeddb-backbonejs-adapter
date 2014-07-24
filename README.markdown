@@ -146,10 +146,12 @@ You can also *get all items for which an indexed value is comprised between 2 va
 
 You can also selects indexed value with some "Comparison Query Operators" (like mongodb)
 The options are:
-- $gte = greater than or equal to (i.e. >=)
-- $gt = greater than (i.e. >)
-- $lte = less than or equal to (i.e. <=)
-- $lt = less than (i.e. <)
+* $gte = greater than or equal to (i.e. >=)
+* $gt = greater than (i.e. >)
+* $lte = less than or equal to (i.e. <=)
+* $lt = less than (i.e. <)
+
+See an example.
 
 	var theater = new Theater() // Theater is a collection of movies
 	theater.fetch({
