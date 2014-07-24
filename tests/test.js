@@ -26,6 +26,9 @@ databasev2.migrations.push(
             store.createIndex("formatIndex", "format", {
                 unique: false
             });
+            store.createIndex("yearIndex", "year", {
+                unique: false
+            });
             store.createIndex("titleAndFormat", ["title", "format"], {
                 unique: false
             });
@@ -103,23 +106,28 @@ function addAllMovies(movies, done) {
         movies = [{
             title: "Hello",
             format: "blueray",
-            id: "1"
+            id: "1",
+            year: 2006
         }, {
             title: "Bonjour",
             format: "dvd",
-            id: "2"
+            id: "2",
+            year: 2002
         }, {
             title: "Halo",
             format: "blueray",
-            id: "3"
+            id: "3",
+            year: 2007
         }, {
             title: "Nihao",
             format: "streaming",
-            id: "4"
+            id: "4",
+            year: 2004
         }, {
             title: "Ciao",
             format: "dvd",
-            id: "5"
+            id: "5",
+            year: 2009
         }];
     }
     var movie = movies.shift();
@@ -562,6 +570,94 @@ var tests = [
                                 start();
                                 equal(theater.models.length, 3, "Should have 3 elements");
                                 deepEqual(theater.pluck("title"), ["Halo", "Nihao", "Ciao"], "Should have [\"Halo\", \"Nihao\", \"Ciao\"]");
+                                nextTest();
+                            }
+                        });
+                    });
+                });
+            }
+        });
+    }],
+    ["read collection with lowerBound $gte (like mongodb)", function () {
+        var theaterToClean = new Theater();
+        theaterToClean.fetch({
+            success: function () {
+                deleteNext(theaterToClean.models, function () {
+                    addAllMovies(null, function () {
+                        // Now all movies are inserted. Which is good.
+                        var theater = new Theater();
+                        theater.fetch({
+                            conditions: {year:{$gte:2006}},
+                            success: function () {
+                                start();
+                                equal(theater.models.length, 3, "Should have 3 elements");
+                                deepEqual(theater.pluck("year"), [2006, 2007, 2009], "Should have [2006, 2007, 2009]");
+                                nextTest();
+                            }
+                        });
+                    });
+                });
+            }
+        });
+    }],
+    ["read collection with lowerBound $gt (like mongodb)", function () {
+        var theaterToClean = new Theater();
+        theaterToClean.fetch({
+            success: function () {
+                deleteNext(theaterToClean.models, function () {
+                    addAllMovies(null, function () {
+                        // Now all movies are inserted. Which is good.
+                        var theater = new Theater();
+                        theater.fetch({
+                            conditions: {year:{$gt:2006}},
+                            success: function () {
+                                start();
+                                equal(theater.models.length, 2, "Should have 2 elements");
+                                deepEqual(theater.pluck("year"), [2007, 2009], "Should have [2007, 2009]");
+                                nextTest();
+                            }
+                        });
+                    });
+                });
+            }
+        });
+    }],
+    ["read collection with upperBound $lte (like mongodb)", function () {
+        var theaterToClean = new Theater();
+        theaterToClean.fetch({
+            success: function () {
+                deleteNext(theaterToClean.models, function () {
+                    addAllMovies(null, function () {
+                        // Now all movies are inserted. Which is good.
+                        var theater = new Theater();
+                        theater.fetch({
+                            conditions: {year:{$lte:2006}},
+                            success: function () {
+                                start();
+                                equal(theater.models.length, 3, "Should have 3 elements");
+                                deepEqual(theater.pluck("year"), [2002, 2004, 2006], "Should have [2002, 2004, 2006]");
+                                nextTest();
+                            }
+                        });
+                    });
+                });
+            }
+        });
+    }],
+    ["read collection with upperBound $lt (like mongodb)", function () {
+        var theaterToClean = new Theater();
+        theaterToClean.fetch({
+            success: function () {
+                deleteNext(theaterToClean.models, function () {
+                    addAllMovies(null, function () {
+                        // Now all movies are inserted. Which is good.
+                        var theater = new Theater();
+                        theater.fetch({
+                            conditions: {year:{$lt:2006}},
+                            success: function () {
+                                start();
+                                equal(theater.models.length, 2, "Should have 2 elements");
+                                deepEqual(theater.pluck("year"), [2002, 2004], "Should have [2002, 2004]");
                                 nextTest();
                             }
                         });

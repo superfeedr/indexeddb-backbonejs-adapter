@@ -419,6 +419,18 @@
                                 // We want ASC order
                                 readCursor = index.openCursor(bounds, window.IDBCursor.NEXT || "next");
                             }
+                        } else if (typeof options.conditions[index.keyPath] === 'object' && ('$gt' in options.conditions[index.keyPath] || '$gte' in options.conditions[index.keyPath])) {
+                            if('$gt' in options.conditions[index.keyPath])
+                                bounds = IDBKeyRange.lowerBound(options.conditions[index.keyPath]['$gt'], true);
+                            else
+                                bounds = IDBKeyRange.lowerBound(options.conditions[index.keyPath]['$gte']);
+                            readCursor = index.openCursor(bounds, window.IDBCursor.NEXT || "next");
+                        } else if (typeof options.conditions[index.keyPath] === 'object' && ('$lt' in options.conditions[index.keyPath] || '$lte' in options.conditions[index.keyPath])) {
+                            if('$lt' in options.conditions[index.keyPath])
+                                bounds = IDBKeyRange.upperBound(options.conditions[index.keyPath]['$lt'], true);
+                            else
+                                bounds = IDBKeyRange.upperBound(options.conditions[index.keyPath]['$lte']);
+                            readCursor = index.openCursor(bounds, window.IDBCursor.NEXT || "next");
                         } else if (options.conditions[index.keyPath] != undefined) {
                             bounds = IDBKeyRange.only(options.conditions[index.keyPath]);
                             readCursor = index.openCursor(bounds);
