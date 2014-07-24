@@ -157,7 +157,7 @@ See an example.
 	theater.fetch({
 		conditions: {year: {$gte: 2013},
 		success: function() {
-			// The theater collection will be populated with all the movies whose genre is "adventure", "comic", "drama", but not "thriller".
+			// The theater collection will be populated with all the movies with year >= 2013
 		}
 	});	
 
