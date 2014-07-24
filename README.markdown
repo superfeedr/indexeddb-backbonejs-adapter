@@ -132,6 +132,8 @@ You can also get *all items with a given value for a specific value of an index*
 		}
 	});
 
+
+
 You can also *get all items for which an indexed value is comprised between 2 values*. The collection will be sorted based on the order of these 2 keys.
 
 	var theater = new Theater() // Theater is a collection of movies
@@ -141,6 +143,23 @@ You can also *get all items for which an indexed value is comprised between 2 va
 			// The theater collection will be populated with all the movies whose genre is "adventure", "comic", "drama", but not "thriller".
 		}
 	});
+
+You can also selects indexed value with some "Comparison Query Operators" (like mongodb)
+The options are:
+* $gte = greater than or equal to (i.e. >=)
+* $gt = greater than (i.e. >)
+* $lte = less than or equal to (i.e. <=)
+* $lt = less than (i.e. <)
+
+See an example.
+
+	var theater = new Theater() // Theater is a collection of movies
+	theater.fetch({
+		conditions: {year: {$gte: 2013},
+		success: function() {
+			// The theater collection will be populated with all the movies with year >= 2013
+		}
+	});	
 
 You can also *get all items after a certain object (excluding that object), or from a certain object (including) to a certain object (including)* (using their ids). This combined with the addIndividually option allows you to lazy load a full collection, by always loading the next element.
 
