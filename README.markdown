@@ -65,13 +65,13 @@ The migrations are object literals with the following :
 				    next();
 				}
 				migrate: function(transaction, next) {
-					var store = transaction.createObjectStore("movies"); // Adds a store, we will use "movies" as the storeName in our Movie model and Collections
+					var store = transaction.db.createObjectStore("movies"); // Adds a store, we will use "movies" as the storeName in our Movie model and Collections
 					next();
 				}
 			}, {
 				version: "1.1",
 				migrate: function(transaction, next) {
-					var store = transaction.objectStore("movies")
+					var store = transaction.db.objectStore("movies")
 					store.createIndex("titleIndex", "title", { unique: true});  // Adds an index on the movies titles
 					store.createIndex("formatIndex", "format", { unique: false}); // Adds an index on the movies formats
 					store.createIndex("genreIndex", "genre", { unique: false}); // Adds an index on the movies genres
