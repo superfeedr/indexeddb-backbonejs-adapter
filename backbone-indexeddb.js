@@ -43,18 +43,14 @@
         this.transactions   = []; // Used to list all transactions and keep track of active ones.
         this.db             = null;
         this.nolog          = nolog;
-        this.supportOnUpgradeNeeded = false;
         var lastMigrationPathVersion = _.last(this.schema.migrations).version;
         if (!this.nolog) debugLog("opening database " + this.schema.id + " in version #" + lastMigrationPathVersion);
         this.dbRequest      = indexedDB.open(this.schema.id,lastMigrationPathVersion); //schema version need to be an unsigned long
 
         this.launchMigrationPath = function(dbVersion) {
-            var transaction = this.dbRequest.transaction || versionRequest.result;
+            var transaction = this.dbRequest.transaction;
             var clonedMigrations = _.clone(schema.migrations);
             this.migrate(transaction, clonedMigrations, dbVersion, {
-                success: function () {
-                    this.ready();
-                }.bind(this),
                 error: function () {
                     this.error = "Database not up to date. " + dbVersion + " expected was " + lastMigrationPathVersion;
                 }.bind(this)
@@ -67,23 +63,19 @@
 
         this.dbRequest.onsuccess = function (e) {
             this.db = e.target.result; // Attach the connection ot the queue.
-            if(!this.supportOnUpgradeNeeded)
-            {
-                var currentIntDBVersion = (parseInt(this.db.version) ||  0); // we need convert beacuse chrome store in integer and ie10 DP4+ in int;
-                var lastMigrationInt = (parseInt(lastMigrationPathVersion) || 0);  // And make sure we compare numbers with numbers.
+            var currentIntDBVersion = (parseInt(this.db.version) ||  0); // we need convert beacuse chrome store in integer and ie10 DP4+ in int;
+            var lastMigrationInt = (parseInt(lastMigrationPathVersion) || 0);  // And make sure we compare numbers with numbers.
 
-                if (currentIntDBVersion === lastMigrationInt) { //if support new event onupgradeneeded will trigger the ready function
-                    // No migration to perform!
-
-                    this.ready();
-                } else if (currentIntDBVersion < lastMigrationInt ) {
-                    // We need to migrate up to the current migration defined in the database
-                    this.launchMigrationPath(currentIntDBVersion);
-                } else {
-                    // Looks like the IndexedDB is at a higher version than the current driver schema.
-                    this.error = "Database version is greater than current code " + currentIntDBVersion + " expected was " + lastMigrationInt;
-                }
-            };
+            if (currentIntDBVersion === lastMigrationInt) { //if support new event onupgradeneeded will trigger the ready function
+                // No migration to perform!
+                this.ready();
+            } else if (currentIntDBVersion < lastMigrationInt ) {
+                // We need to migrate up to the current migration defined in the database
+                this.launchMigrationPath(currentIntDBVersion);
+            } else {
+                // Looks like the IndexedDB is at a higher version than the current driver schema.
+                this.error = "Database version is greater than current code " + currentIntDBVersion + " expected was " + lastMigrationInt;
+            }
         }.bind(this);
 
 
@@ -101,14 +93,10 @@
 
 
         this.dbRequest.onupgradeneeded = function(iDBVersionChangeEvent){
-            this.db =iDBVersionChangeEvent.target.transaction.db;
-
-            this.supportOnUpgradeNeeded = true;
+            this.db =iDBVersionChangeEvent.target.result;
 
             if (!this.nolog) debugLog("onupgradeneeded = " + iDBVersionChangeEvent.oldVersion + " => " + iDBVersionChangeEvent.newVersion);
             this.launchMigrationPath(iDBVersionChangeEvent.oldVersion);
-
-
         }.bind(this);
     }
 
@@ -138,6 +126,8 @@
 
         // Performs all the migrations to reach the right version of the database.
         migrate: function (transaction, migrations, version, options) {
+            transaction.onerror = options.error;
+            transaction.onabort = options.error;
             if (!this.nolog) debugLog("migrate begin version from #" + version);
             var that = this;
             var migration = migrations.shift();
@@ -159,55 +149,35 @@
                     migration.before(function () {
                         if (!this.nolog) debugLog("migrate done before version #" + migration.version);
 
-                        var continueMigration = function (e) {
-                            if (!this.nolog) debugLog("migrate begin migrate version #" + migration.version);
+                        if (!this.nolog) debugLog("migrate begin migrate version #" + migration.version);
 
-                            migration.migrate(transaction, function () {
-                                if (!this.nolog) debugLog("migrate done migrate version #" + migration.version);
-                                // Migration successfully appliedn let's go to the next one!
-                                if (!this.nolog) debugLog("migrate begin after version #" + migration.version);
-                                migration.after(function () {
-                                    if (!this.nolog) debugLog("migrate done after version #" + migration.version);
-                                    if (!this.nolog) debugLog("Migrated to " + migration.version);
+                        migration.migrate(transaction, function () {
+                            if (!this.nolog) debugLog("migrate done migrate version #" + migration.version);
+                            // Migration successfully appliedn let's go to the next one!
+                            if (!this.nolog) debugLog("migrate begin after version #" + migration.version);
+                            migration.after(function () {
+                                if (!this.nolog) debugLog("migrate done after version #" + migration.version);
+                                if (!this.nolog) debugLog("Migrated to " + migration.version);
 
-                                    //last modification occurred, need finish
-                                    if(migrations.length ==0) {
-                                        /*if(this.supportOnUpgradeNeeded){
+                                //last modification occurred, need finish
+                                if(migrations.length ==0) {
+                                    if (!this.nolog) {
+                                        debugLog("migrate setting transaction.oncomplete to finish  version #" + migration.version);
+                                        transaction.oncomplete = function() {
+                                            debugLog("migrate done transaction.oncomplete version #" + migration.version);
                                             debugLog("Done migrating");
                                             // No more migration
-                                            options.success();
                                         }
-                                        else{*/
-                                            if (!this.nolog) debugLog("migrate setting transaction.oncomplete to finish  version #" + migration.version);
-                                            transaction.oncomplete = function() {
-                                                if (!that.nolog) debugLog("migrate done transaction.oncomplete version #" + migration.version);
-
-                                                if (!that.nolog) debugLog("Done migrating");
-                                                // No more migration
-                                                options.success();
-                                            }
-                                        //}
                                     }
-                                    else
-                                    {
-                                        if (!this.nolog) debugLog("migrate end from version #" + version + " to " + migration.version);
-                                            that.migrate(transaction, migrations, version, options);
-                                    }
+                                }
+                                else
+                                {
+                                    if (!this.nolog) debugLog("migrate end from version #" + version + " to " + migration.version);
+                                        that.migrate(transaction, migrations, version, options);
+                                }
 
-                                }.bind(this));
                             }.bind(this));
-                        }.bind(this);
-
-                        if(!this.supportOnUpgradeNeeded){
-                            if (!this.nolog) debugLog("migrate begin setVersion version #" + migration.version);
-                            var versionRequest = this.db.setVersion(migration.version);
-                            versionRequest.onsuccess = continueMigration;
-                            versionRequest.onerror = options.error;
-                        }
-                        else {
-                            continueMigration();
-                        }
-
+                        }.bind(this));
                     }.bind(this));
                 } else {
                     // No need to apply this migration
