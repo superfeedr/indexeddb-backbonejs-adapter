@@ -29,13 +29,14 @@
     // That's the interesting part.
     // There is a driver for each schema provided. The schema is a te combination of name (for the database), a version as well as migrations to reach that
     // version of the database.
-    function Driver(schema, ready, nolog) {
+    function Driver(schema, ready, nolog, onerror) {
         this.schema         = schema;
         this.ready          = ready;
         this.error          = null;
         this.transactions   = []; // Used to list all transactions and keep track of active ones.
         this.db             = null;
         this.nolog          = nolog;
+        this.onerror        = onerror;
         var lastMigrationPathVersion = _.last(this.schema.migrations).version;
         if (!this.nolog) debugLog("opening database " + this.schema.id + " in version #" + lastMigrationPathVersion);
         this.dbRequest      = indexedDB.open(this.schema.id,lastMigrationPathVersion); //schema version need to be an unsigned long
@@ -44,14 +45,14 @@
             var transaction = this.dbRequest.transaction;
             var clonedMigrations = _.clone(schema.migrations);
             this.migrate(transaction, clonedMigrations, dbVersion, {
-                error: function () {
+                error: function (event) {
                     this.error = "Database not up to date. " + dbVersion + " expected was " + lastMigrationPathVersion;
                 }.bind(this)
             });
         };
 
         this.dbRequest.onblocked = function(event){
-            if (!this.nolog) debugLog("blocked");
+            if (!this.nolog) debugLog("connection to database blocked");
         }
 
         this.dbRequest.onsuccess = function (e) {
@@ -76,11 +77,15 @@
         this.dbRequest.onerror = function (e) {
             // Failed to open the database
             this.error = "Couldn't not connect to the database"
+            if (!this.nolog) debugLog("Couldn't not connect to the database");
+            this.onerror();
         }.bind(this);
 
         this.dbRequest.onabort = function (e) {
             // Failed to open the database
             this.error = "Connection to the database aborted"
+            if (!this.nolog) debugLog("Connection to the database aborted");
+            this.onerror();
         }.bind(this);
 
 
@@ -121,6 +126,7 @@
         migrate: function (transaction, migrations, version, options) {
             transaction.onerror = options.error;
             transaction.onabort = options.error;
+
             if (!this.nolog) debugLog("migrate begin version from #" + version);
             var that = this;
             var migration = migrations.shift();
@@ -140,7 +146,7 @@
                     // First, let's run the before script
                     if (!this.nolog) debugLog("migrate begin before version #" + migration.version);
                     migration.before(function () {
-                        if (!this.nolog) debugLog("migrate done before version #" + migration.version);
+                    if (!this.nolog) debugLog("migrate done before version #" + migration.version);
 
                         if (!this.nolog) debugLog("migrate begin migrate version #" + migration.version);
 
@@ -155,18 +161,17 @@
                                 //last modification occurred, need finish
                                 if(migrations.length ==0) {
                                     if (!this.nolog) {
-                                        debugLog("migrate setting transaction.oncomplete to finish  version #" + migration.version);
+                                        debugLog("migrate setting transaction.oncomplete to finish version #" + migration.version);
                                         transaction.oncomplete = function() {
                                             debugLog("migrate done transaction.oncomplete version #" + migration.version);
                                             debugLog("Done migrating");
-                                            // No more migration
                                         }
                                     }
                                 }
                                 else
                                 {
                                     if (!this.nolog) debugLog("migrate end from version #" + version + " to " + migration.version);
-                                        that.migrate(transaction, migrations, version, options);
+                                    that.migrate(transaction, migrations, version, options);
                                 }
 
                             }.bind(this));
@@ -486,11 +491,12 @@
     // The execution queue is an abstraction to buffer up requests to the database.
     // It holds a "driver". When the driver is ready, it just fires up the queue and executes in sync.
     function ExecutionQueue(schema,next,nolog) {
-        this.driver     = new Driver(schema, this.ready.bind(this), nolog);
+        this.driver     = new Driver(schema, this.ready.bind(this), nolog, this.error.bind(this));
         this.started    = false;
+        this.failed     = false;
         this.stack      = [];
         this.version    = _.last(schema.migrations).version;
-        this.next = next;
+        this.next       = next;
     }
 
     // ExecutionQueue Prototype
@@ -506,10 +512,21 @@
             this.next();
         },
 
+        error: function() {
+            this.failed = true;
+            _.each(this.stack, function (message) {
+                this.execute(message);
+            }.bind(this));
+            this.stack = [];
+            this.next();
+        },
+
         // Executes a given command on the driver. If not started, just stacks up one more element.
         execute: function (message) {
             if (this.started) {
                 this.driver.execute(message[2].storeName || message[1].storeName, message[0], message[1], message[2]); // Upon messages, we execute the query
+            } else if (this.failed) {
+                message[2].error();
             } else {
                 this.stack.push(message);
             }
@@ -584,12 +601,12 @@
         };
 
         if (!Databases[schema.id]) {
-              Databases[schema.id] = new ExecutionQueue(schema,next,schema.nolog);
+            Databases[schema.id] = new ExecutionQueue(schema,next,schema.nolog);
         } else {
             next();
         }
 
-    	return promise;
+        return promise;
     };
 
     Backbone.ajaxSync = Backbone.sync;
