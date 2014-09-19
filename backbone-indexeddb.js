@@ -223,9 +223,10 @@
             //this._track_transaction(writeTransaction);
             var store = writeTransaction.objectStore(storeName);
             var json = object.toJSON();
+            var idAttribute = _.result(object, 'idAttribute');
             var writeRequest;
 
-            if (json.id === undefined && !store.autoIncrement) json.id = guid();
+            if (json[idAttribute] === undefined && !store.autoIncrement) json[idAttribute] = guid();
 
             writeTransaction.onerror = function (e) {
                 options.error(e);
@@ -235,7 +236,7 @@
             };
 
             if (!store.keyPath)
-                writeRequest = store.add(json, json.id);
+                writeRequest = store.add(json, json[idAttribute]);
             else
                 writeRequest = store.add(json);
         },
@@ -247,12 +248,13 @@
             //this._track_transaction(writeTransaction);
             var store = writeTransaction.objectStore(storeName);
             var json = object.toJSON();
+            var idAttribute = _.result(object, 'idAttribute');
             var writeRequest;
 
-            if (!json.id) json.id = guid();
+            if (!json[idAttribute]) json[idAttribute] = guid();
 
             if (!store.keyPath)
-              writeRequest = store.put(json, json.id);
+              writeRequest = store.put(json, json[idAttribute]);
             else
               writeRequest = store.put(json);
 
@@ -271,10 +273,11 @@
 
             var store = readTransaction.objectStore(storeName);
             var json = object.toJSON();
+            var idAttribute = _.result(object, 'idAttribute');
 
             var getRequest = null;
-            if (json.id) {
-                getRequest = store.get(json.id);
+            if (json[idAttribute]) {
+                getRequest = store.get(json[idAttribute]);
             } else if(options.index) {
                 var index = store.index(options.index.name);
                 getRequest = index.get(options.index.value);
@@ -326,8 +329,9 @@
 
             var store = deleteTransaction.objectStore(storeName);
             var json = object.toJSON();
+            var idAttribute = _.result(object, 'idAttribute');
 
-            var deleteRequest = store.delete(json.id);
+            var deleteRequest = store.delete(json[idAttribute]);
 
             deleteTransaction.oncomplete = function (event) {
                 options.success(null);
@@ -365,6 +369,7 @@
             var queryTransaction = this.db.transaction([storeName], "readonly");
             //this._track_transaction(queryTransaction);
 
+            var idAttribute = _.result(collection.model, 'idAttribute');
             var readCursor = null;
             var store = queryTransaction.objectStore(storeName);
             var index = null,
@@ -459,7 +464,7 @@
                             if (options.addIndividually) {
                                 collection.add(cursor.value);
                             } else if (options.clear) {
-                                var deleteRequest = store.delete(cursor.value.id);
+                                var deleteRequest = store.delete(cursor.value[idAttribute]);
                                 deleteRequest.onsuccess = function (event) {
                                     elements.push(cursor.value);
                                 };
