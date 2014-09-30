@@ -369,7 +369,7 @@
             var queryTransaction = this.db.transaction([storeName], "readonly");
             //this._track_transaction(queryTransaction);
 
-            var idAttribute = _.result(collection.model, 'idAttribute');
+            var idAttribute = _.result(collection.model.prototype, 'idAttribute');
             var readCursor = null;
             var store = queryTransaction.objectStore(storeName);
             var index = null,
