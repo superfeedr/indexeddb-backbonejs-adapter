@@ -95,8 +95,17 @@
         this.dbRequest.onupgradeneeded = function(iDBVersionChangeEvent){
             this.db =iDBVersionChangeEvent.target.result;
 
-            if (!this.nolog) debugLog("onupgradeneeded = " + iDBVersionChangeEvent.oldVersion + " => " + iDBVersionChangeEvent.newVersion);
-            this.launchMigrationPath(iDBVersionChangeEvent.oldVersion);
+            var newVersion = iDBVersionChangeEvent.newVersion;
+            var oldVersion = iDBVersionChangeEvent.oldVersion;
+
+            // Fix Safari 8 and iOS 8 bug
+            // at the first connection oldVersion is equal to 9223372036854776000
+            // but the real value is 0
+            if (oldVersion > 99999999999)
+                oldVersion = 0;
+
+            if (!this.nolog) debugLog("onupgradeneeded = " + oldVersion + " => " + newVersion);
+            this.launchMigrationPath(oldVersion);
         }.bind(this);
     }
 
