@@ -459,14 +459,14 @@
                         if (options.abort || (options.limit && processed >= options.limit)) {
                             // Yet, we have processed enough elements. So, let's just skip.
                             if (bounds && options.conditions[index.keyPath]) {
-                                cursor.continue(options.conditions[index.keyPath][1] + 1); /* We need to 'terminate' the cursor cleany, by moving to the end */
+                                cursor["continue"](options.conditions[index.keyPath][1] + 1); /* We need to 'terminate' the cursor cleany, by moving to the end */
                             } else {
-                                cursor.continue(); /* We need to 'terminate' the cursor cleany, by moving to the end */
+                                cursor["continue"](); /* We need to 'terminate' the cursor cleany, by moving to the end */
                             }
                         }
                         else if (options.offset && options.offset > skipped) {
                             skipped++;
-                            cursor.continue(); /* We need to Moving the cursor forward */
+                            cursor["continue"](); /* We need to Moving the cursor forward */
                         } else {
                             // This time, it looks like it's good!
                             if (!options.filter || typeof options.filter !== 'function' || options.filter(cursor.value)) {
@@ -483,7 +483,7 @@
                                 }
                             }
                             processed++;
-                            cursor.continue();
+                            cursor["continue"]();
                         }
                     }
                 };
