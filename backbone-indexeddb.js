@@ -491,8 +491,8 @@
         },
         close :function(){
             if(this.db){
-                this.db.close()
-;            }
+                this.db.close();
+            }
         }
     };
 
@@ -555,17 +555,17 @@
 
     function sync(method, object, options) {
 
-        if(method=="closeall"){
+        if(method == "closeall"){
             _.each(Databases,function(database){
                 database.close();
             });
             // Clean up active databases object.
-            Databases = {}
-            return;
+            Databases = {};
+            return Backbone.$.Deferred().resolve();
         }
 
         // If a model or a collection does not define a database, fall back on ajaxSync
-        if (typeof object.database === 'undefined' && typeof Backbone.ajaxSync === 'function'){
+        if (!object || !_.isObject(object.database)) {
             return Backbone.ajaxSync(method, object, options);
         }
 
