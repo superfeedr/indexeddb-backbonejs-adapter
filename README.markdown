@@ -54,32 +54,34 @@ The migrations are object literals with the following :
 
 ### Example
 
-	var database = {
-		id: "my-database",
-		description: "The database for the Movies",
-		migrations : [
-			{
-				version: "1.0",
-				before: function(next) {
-				    // Do magic stuff before the migration. For example, before adding indices, the Chrome implementation requires to set define a value for each of the objects.
-				    next();
-				}
-				migrate: function(transaction, next) {
-					var store = transaction.db.createObjectStore("movies"); // Adds a store, we will use "movies" as the storeName in our Movie model and Collections
-					next();
-				}
-			}, {
-				version: "1.1",
-				migrate: function(transaction, next) {
-					var store = transaction.db.objectStore("movies")
-					store.createIndex("titleIndex", "title", { unique: true});  // Adds an index on the movies titles
-					store.createIndex("formatIndex", "format", { unique: false}); // Adds an index on the movies formats
-					store.createIndex("genreIndex", "genre", { unique: false}); // Adds an index on the movies genres
-					next();
-				}
+```js
+var database = {
+	id: "my-database",
+	description: "The database for the Movies",
+	migrations : [
+		{
+			version: "1.0",
+			before: function(next) {
+			    // Do magic stuff before the migration. For example, before adding indices, the Chrome implementation requires to set define a value for each of the objects.
+			    next();
 			}
-		]
-	}
+			migrate: function(transaction, next) {
+				var store = transaction.db.createObjectStore("movies"); // Adds a store, we will use "movies" as the storeName in our Movie model and Collections
+				next();
+			}
+		}, {
+			version: "1.1",
+			migrate: function(transaction, next) {
+				var store = transaction.db.objectStore("movies")
+				store.createIndex("titleIndex", "title", { unique: true});  // Adds an index on the movies titles
+				store.createIndex("formatIndex", "format", { unique: false}); // Adds an index on the movies formats
+				store.createIndex("genreIndex", "genre", { unique: false}); // Adds an index on the movies genres
+				next();
+			}
+		}
+	]
+}
+```
 
 ## Models
 
@@ -87,13 +89,17 @@ Not much change to your usual models. The only significant change is that you ca
 
 For example, in your traditional backbone apps, you would do something like :
 
-	var movie = new Movie({id: "123"})
-	movie.fetch()
+```js
+var movie = new Movie({id: "123"})
+movie.fetch()
+```
 
 to fetch from the remote server the Movie with the id `123`. This is convenient when you know the id. With this adapter, you can do something like
 
-	var movie = new Movie({title: "Avatar"})
-	movie.fetch()
+```js
+var movie = new Movie({title: "Avatar"})
+movie.fetch()
+```
 
 Obviously, to perform this, you need to have and index on `title`, and a movie with "Avatar" as a title obviously. If the index is not unique, the database will only return the first one.
 
@@ -103,46 +109,54 @@ I added a lot of fun things to the collections, that make use of the `options` p
 
 First, you can `limit` and `offset` the number of items that are being fetched by a collection.
 
-	var theater = new Theater() // Theater is a collection of movies
-	theater.fetch({
-		offset: 1,
-		limit: 3,
-		success: function() {
-			// The theater collection will be populated with at most 3 items, skipping the first one
-		}
-	});
+```js
+var theater = new Theater() // Theater is a collection of movies
+theater.fetch({
+	offset: 1,
+	limit: 3,
+	success: function() {
+		// The theater collection will be populated with at most 3 items, skipping the first one
+	}
+});
+```
 
 You can also *provide a range* applied to the id.
 
-	var theater = new Theater() // Theater is a collection of movies
-	theater.fetch({
-		range: ["a", "b"],
-		success: function() {
-			// The theater collection will be populated with all the items with an id comprised between "a" and "b" ("alphonse" is between "a" and "b")
-		}
-	});
+```js
+var theater = new Theater() // Theater is a collection of movies
+theater.fetch({
+	range: ["a", "b"],
+	success: function() {
+		// The theater collection will be populated with all the items with an id comprised between "a" and "b" ("alphonse" is between "a" and "b")
+	}
+});
+```
 
 You can also get *all items with a given value for a specific value of an index*. We use the `conditions` keyword.
 
-	var theater = new Theater() // Theater is a collection of movies
-	theater.fetch({
-		conditions: {genre: "adventure"},
-		success: function() {
-			// The theater collection will be populated with all the movies whose genre is "adventure"
-		}
-	});
+```js
+var theater = new Theater() // Theater is a collection of movies
+theater.fetch({
+	conditions: {genre: "adventure"},
+	success: function() {
+		// The theater collection will be populated with all the movies whose genre is "adventure"
+	}
+});
+```
 
 
 
 You can also *get all items for which an indexed value is comprised between 2 values*. The collection will be sorted based on the order of these 2 keys.
 
-	var theater = new Theater() // Theater is a collection of movies
-	theater.fetch({
-		conditions: {genre: ["a", "e"]},
-		success: function() {
-			// The theater collection will be populated with all the movies whose genre is "adventure", "comic", "drama", but not "thriller".
-		}
-	});
+```js
+var theater = new Theater() // Theater is a collection of movies
+theater.fetch({
+	conditions: {genre: ["a", "e"]},
+	success: function() {
+		// The theater collection will be populated with all the movies whose genre is "adventure", "comic", "drama", but not "thriller".
+	}
+});
+```
 
 You can also selects indexed value with some "Comparison Query Operators" (like mongodb)
 The options are:
@@ -153,26 +167,29 @@ The options are:
 
 See an example.
 
-	var theater = new Theater() // Theater is a collection of movies
-	theater.fetch({
-		conditions: {year: {$gte: 2013},
-		success: function() {
-			// The theater collection will be populated with all the movies with year >= 2013
-		}
-	});	
+```js
+var theater = new Theater() // Theater is a collection of movies
+theater.fetch({
+	conditions: {year: {$gte: 2013},
+	success: function() {
+		// The theater collection will be populated with all the movies with year >= 2013
+	}
+});
+```
 
 You can also *get all items after a certain object (excluding that object), or from a certain object (including) to a certain object (including)* (using their ids). This combined with the addIndividually option allows you to lazy load a full collection, by always loading the next element.
 
-    	var theater = new Theater() // Theater is a collection of movies
-    	theater.fetch({
-    		from: new Movie({id: 12345, ...}),
-    		after: new Movie({id: 12345, ...}),
-    		to: new Movie({id: 12345, ...}),
-    		success: function() {
-    			// The theater collection will be populated with all the movies whose genre is "adventure", "comic", "drama", but not "thriller".
-    		}
-    	});
-
+```js
+    var theater = new Theater() // Theater is a collection of movies
+    theater.fetch({
+    	from: new Movie({id: 12345, ...}),
+    	after: new Movie({id: 12345, ...}),
+    	to: new Movie({id: 12345, ...}),
+    	success: function() {
+    		// The theater collection will be populated with all the movies whose genre is "adventure", "comic", "drama", but not "thriller".
+    	}
+    });
+```
 
 You can also obviously combine all these.
 
@@ -186,6 +203,3 @@ class MyMode extends Backbone.Model
 ```
 
 Any more complex dual persistence can be provided in method overrides, which could eventually drive out the design for a multi-layer persistence adapter.
-
-
-
