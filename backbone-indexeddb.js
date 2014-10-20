@@ -45,9 +45,9 @@
             var transaction = this.dbRequest.transaction;
             var clonedMigrations = _.clone(schema.migrations);
             this.migrate(transaction, clonedMigrations, dbVersion, {
-                error: function (event) {
+                error: _.bind(function(event) {
                     this.error = "Database not up to date. " + dbVersion + " expected was " + lastMigrationPathVersion;
-                }.bind(this)
+                }, this)
             });
         };
 
@@ -515,9 +515,7 @@
 
         error: function() {
             this.failed = true;
-            _.each(this.stack, function (message) {
-                this.execute(message);
-            }.bind(this));
+            _.each(this.stack, this.execute, this);
             this.stack = [];
             this.next();
         },
