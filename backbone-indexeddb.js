@@ -565,6 +565,7 @@
             }
         }
 
+        options = options || {};
         var promise;
 
         if (typeof Backbone.$ === 'undefined' || typeof Backbone.$.Deferred === 'undefined') {
