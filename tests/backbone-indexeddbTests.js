@@ -336,6 +336,25 @@ backboneIndexedDBTest.prototype.testReadModel = function (queue) {
                 error:onError});
         }
     );
+
+    queue.call("Try read model with promise", function (callbacks) {
+
+            var onSuccess = callbacks.add(function (object) {
+                assertEquals("The movie should have the right title vs savedMovie", savedMovie.toJSON().title, movie.toJSON().title);
+                assertEquals("The movie should have the right format vs savedMovie", savedMovie.toJSON().format, movie.toJSON().format);
+                assertEquals("The movie should have the right title vs object", object.toJSON().title, movie.toJSON().title);
+                assertEquals("The movie should have the right format vs object", object.toJSON().format, movie.toJSON().format);
+            });
+
+            var onError = callbacks.addErrback(function () {
+                jstestdriver.console.log("create model v2 Error");
+            });
+
+            console.log("************" + movie.id);
+            savedMovie = new Movie({id:movie.id});
+            savedMovie.fetch().then(onSuccess, onError);
+        }
+    );
 };
 
 

@@ -577,31 +577,22 @@
             }
         }
 
-        var promise;
-
-        if (typeof Backbone.$ === 'undefined' || typeof Backbone.$.Deferred === 'undefined') {
-            var noop = function() {};
-            var resolve = noop;
-            var reject = noop;
-        } else {
-            var dfd = Backbone.$.Deferred();
-            var resolve = dfd.resolve;
-            var reject = dfd.reject;
-
-            promise = dfd.promise();
+        var dfd;
+        if (typeof $ != 'undefined' && $.Deferred) {
+            dfd = $.Deferred();
         }
 
         var success = options.success;
         options.success = function(resp) {
             if (success) success(resp);
-            resolve();
+            if (dfd) dfd.resolve(resp);
             object.trigger('sync', object, resp, options);
         };
 
         var error = options.error;
         options.error = function(resp) {
             if (error) error(resp);
-            reject();
+            if (dfd) dfd.reject(resp);
             object.trigger('error', object, resp, options);
         };
 
@@ -615,7 +606,7 @@
             next();
         }
 
-        return promise;
+        return dfd && dfd.promise();
     };
 
     Backbone.ajaxSync = Backbone.sync;
