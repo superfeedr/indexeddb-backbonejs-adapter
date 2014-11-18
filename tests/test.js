@@ -282,6 +282,36 @@ var tests = [
             }
         });
     }],
+    ["read model with promise resolve", function () {
+        var movie = new Movie();
+        movie.save({
+            title: "Avatar",
+            format: "blue-ray"
+        })
+        .then(function () {
+            // Ok, now we need to create a new movie object and retrieve it
+            var saved = new Movie({
+                id: movie.id
+            });
+            saved.fetch()
+            .then(function (object) {
+                // success
+                start();
+                equal(saved.toJSON().title, movie.toJSON().title, "The movie should have the right title");
+                equal(saved.toJSON().format, movie.toJSON().format, "The movie should have the right format");
+                nextTest();
+            },
+            function (error) {
+                start();
+                nextTest();
+                // Failure
+            });
+        }, function (o, error) {
+            start();
+            equal(true, false, error.error.target.webkitErrorMessage);
+            nextTest();
+        });
+    }],
     ["read model with index", function () {
         function saveMovieAndReadWithIndex(movie) {
             movie.save({}, {
