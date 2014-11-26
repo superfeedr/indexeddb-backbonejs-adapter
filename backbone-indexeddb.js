@@ -579,10 +579,11 @@
             }
         }
 
-        var dfd;
+        var dfd, promise;
         if (typeof $ != 'undefined' && $.Deferred) {
             dfd = $.Deferred();
-            dfd.promise().abort = function () {
+            promise = dfd.promise();
+            promise.abort = function () {
                 options.abort = true;
             };
         }
@@ -595,7 +596,7 @@
             }
             if (dfd) {
                 if (!options.abort) {
-                    dfd.resolve();
+                    dfd.resolve(resp);
                 } else {
                     dfd.reject();
                 }
@@ -619,7 +620,7 @@
             next();
         }
 
-        return dfd && dfd.promise();
+        return promise;
     };
 
     Backbone.ajaxSync = Backbone.sync;
