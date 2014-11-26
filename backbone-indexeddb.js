@@ -430,6 +430,8 @@
                     } else {
                         readCursor = store.openCursor(bounds, window.IDBCursor.NEXT || "next");
                     }
+                } else if (options.indexName) {
+                    readCursor = store.index(options.indexName).openCursor();
                 } else {
                     readCursor = store.openCursor();
                 }
@@ -468,19 +470,21 @@
                             cursor.continue(); /* We need to Moving the cursor forward */
                         } else {
                             // This time, it looks like it's good!
-                            if (options.addIndividually) {
-                                collection.add(cursor.value);
-                            } else if (options.clear) {
-                                var deleteRequest = store.delete(cursor.value[idAttribute]);
-                                deleteRequest.onsuccess = function (event) {
-                                    elements.push(cursor.value);
-                                };
-                                deleteRequest.onerror = function (event) {
-                                    elements.push(cursor.value);
-                                };
+                            if (!options.filter || typeof(options.filter) !== 'function' || options.filter(cursor.value)) {
+                                if (options.addIndividually) {
+                                    collection.add(cursor.value);
+                                } else if (options.clear) {
+                                    var deleteRequest = store.delete(cursor.value[idAttribute]);
+                                    deleteRequest.onsuccess = function (event) {
+                                        elements.push(cursor.value);
+                                    };
+                                    deleteRequest.onerror = function (event) {
+                                        elements.push(cursor.value);
+                                    };
 
-                            } else {
-                                elements.push(cursor.value);
+                                } else {
+                                    elements.push(cursor.value);
+                                }
                             }
                             processed++;
                             cursor.continue();
