@@ -48,6 +48,20 @@ databasev3.migrations.push(
     }
 );
 
+var databasev4 = $.extend(true, {}, databasev3);
+databasev4.migrations.push(
+    {
+        version: 4,
+        migrate: function (transaction, next) {
+            var store = transaction.db.createObjectStore("books", { keyPath: "hash" });
+            store.createIndex("hash", ["hash", "hash"], {
+                unique: true
+            });
+            next();
+        }
+    }
+);
+
 var Moviev1 = Backbone.Model.extend({
     database: databasev1,
     storeName: "movies"
@@ -67,6 +81,11 @@ var Theater = Backbone.Collection.extend({
     database: databasev2,
     storeName: "movies",
     model: Movie
+});
+
+var Book = Backbone.Model.extend({
+    database: databasev4,
+    storeName: "books"
 });
 
 function deleteDB(dbObj) {
@@ -515,7 +534,7 @@ var tests = [
                         // success
                         equal(true, true, "It should delete the object");
                         movie.fetch({
-                            success: function () {
+                            success: function (object) {
                                 start();
                                 equal(true, false, "Object was not deleted");
                                 nextTest();
@@ -941,6 +960,49 @@ var tests = [
                 start();
                 if (window.console && window.console.log) window.console.log(error);
                 equal(true, false, error.target.webkitErrorMessage);
+                nextTest();
+            }
+        });
+    }],
+    ["model delete with keyPath specified", function () {
+        var book = new Book();
+        book.save({
+            hash: "8g5d2dh5j",
+            title: "Dune",
+            author: "Franck Herbert"
+        }, {
+            success: function (object) {
+                // success
+                book.destroy({
+                    success: function (object) {
+                        // success
+                        equal(true, true, "It should delete the object");
+                        var b = new Book({ hash: "8g5d2dh5j" });
+                        b.fetch({
+                            success: function (object) {
+                                start();
+                                equal(true, false, "Object was not deleted");
+                                nextTest();
+                            },
+                            error: function (object, error) {
+                                start();
+                                equal(error, "Not Found", "Object was deleted");
+                                nextTest();
+                            }
+                        });
+                    },
+                    error: function (object, error) {
+                        // error
+                        start();
+                        equal(true, false, error);
+                        nextTest();
+                    }
+                });
+            },
+            error: function (error) {
+                // error
+                start();
+                equal(true, false, error.error.target.webkitErrorMessage);
                 nextTest();
             }
         });

@@ -336,7 +336,7 @@
 
             var store = deleteTransaction.objectStore(storeName);
             var json = object.toJSON();
-            var idAttribute = store.keyPath ? store.keyPath : _.result(object, 'idAttribute');
+            var idAttribute = store.keyPath || _.result(object, 'idAttribute');
 
             var deleteRequest = store.delete(json[idAttribute]);
 
