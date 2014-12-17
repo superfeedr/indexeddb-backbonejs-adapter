@@ -382,7 +382,8 @@
             var index = null,
                 lower = null,
                 upper = null,
-                bounds = null;
+                bounds = null,
+                key;
 
             if (options.conditions) {
                 // We have a condition, we need to use it for the cursor
@@ -430,8 +431,12 @@
                     } else {
                         readCursor = store.openCursor(bounds, window.IDBCursor.NEXT || "next");
                     }
-                } else if (options.indexName) {
-                    readCursor = store.index(options.indexName).openCursor();
+                } else if (options.sort && options.sort.index) {
+                    if (options.sort.order === -1) {
+                        readCursor = store.index(options.sort.index).openCursor(null, window.IDBCursor.PREV || "prev");
+                    } else {
+                        readCursor = store.index(options.sort.index).openCursor(null, window.IDBCursor.NEXT || "next");
+                    }
                 } else {
                     readCursor = store.openCursor();
                 }
