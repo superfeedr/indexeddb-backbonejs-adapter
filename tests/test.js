@@ -802,7 +802,7 @@ var tests = [
                                 format: ["a", "f"]
                             },
                             filter: function (movie) {
-                                return movie && movie.title && movie.title[0] === 'H';
+                                return movie && movie.title && movie.title.charAt(0) === 'H';
                             }
                         }).done(function () {
                             start();
