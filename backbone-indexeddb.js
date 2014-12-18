@@ -382,7 +382,8 @@
             var index = null,
                 lower = null,
                 upper = null,
-                bounds = null;
+                bounds = null,
+                key;
 
             if (options.conditions) {
                 // We have a condition, we need to use it for the cursor
@@ -430,6 +431,12 @@
                     } else {
                         readCursor = store.openCursor(bounds, window.IDBCursor.NEXT || "next");
                     }
+                } else if (options.sort && options.sort.index) {
+                    if (options.sort.order === -1) {
+                        readCursor = store.index(options.sort.index).openCursor(null, window.IDBCursor.PREV || "prev");
+                    } else {
+                        readCursor = store.index(options.sort.index).openCursor(null, window.IDBCursor.NEXT || "next");
+                    }
                 } else {
                     readCursor = store.openCursor();
                 }
@@ -446,16 +453,14 @@
                     var cursor = e.target.result;
                     if (!cursor) {
                         if (options.addIndividually || options.clear) {
-                            // nothing!
-                            // We need to indicate that we're done. But, how?
-                            collection.trigger("reset");
+                            options.success(elements, true);
                         } else {
                             options.success(elements); // We're done. No more elements.
                         }
                     }
                     else {
                         // Cursor is not over yet.
-                        if (options.limit && processed >= options.limit) {
+                        if (options.abort || (options.limit && processed >= options.limit)) {
                             // Yet, we have processed enough elements. So, let's just skip.
                             if (bounds && options.conditions[index.keyPath]) {
                                 cursor.continue(options.conditions[index.keyPath][1] + 1); /* We need to 'terminate' the cursor cleany, by moving to the end */
@@ -468,19 +473,21 @@
                             cursor.continue(); /* We need to Moving the cursor forward */
                         } else {
                             // This time, it looks like it's good!
-                            if (options.addIndividually) {
-                                collection.add(cursor.value);
-                            } else if (options.clear) {
-                                var deleteRequest = store.delete(cursor.value[idAttribute]);
-                                deleteRequest.onsuccess = function (event) {
-                                    elements.push(cursor.value);
-                                };
-                                deleteRequest.onerror = function (event) {
-                                    elements.push(cursor.value);
-                                };
+                            if (!options.filter || typeof(options.filter) !== 'function' || options.filter(cursor.value)) {
+                                if (options.addIndividually) {
+                                    collection.add(cursor.value);
+                                } else if (options.clear) {
+                                    var deleteRequest = store.delete(cursor.value[idAttribute]);
+                                    deleteRequest.onsuccess = function (event) {
+                                        elements.push(cursor.value);
+                                    };
+                                    deleteRequest.onerror = function (event) {
+                                        elements.push(cursor.value);
+                                    };
 
-                            } else {
-                                elements.push(cursor.value);
+                                } else {
+                                    elements.push(cursor.value);
+                                }
                             }
                             processed++;
                             cursor.continue();
@@ -577,16 +584,28 @@
             }
         }
 
-        var dfd;
+        var dfd, promise;
         if (typeof $ != 'undefined' && $.Deferred) {
             dfd = $.Deferred();
+            promise = dfd.promise();
+            promise.abort = function () {
+                options.abort = true;
+            };
         }
 
         var success = options.success;
-        options.success = function(resp) {
-            if (success) success(resp);
-            if (dfd) dfd.resolve(resp);
-            object.trigger('sync', object, resp, options);
+        options.success = function(resp, silenced) {
+            if (!silenced) {
+                if (success) success(resp);
+                object.trigger('sync', object, resp, options);
+            }
+            if (dfd) {
+                if (!options.abort) {
+                    dfd.resolve(resp);
+                } else {
+                    dfd.reject();
+                }
+            }
         };
 
         var error = options.error;
@@ -606,7 +625,7 @@
             next();
         }
 
-        return dfd && dfd.promise();
+        return promise;
     };
 
     Backbone.ajaxSync = Backbone.sync;

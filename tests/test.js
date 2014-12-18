@@ -808,6 +808,108 @@ var tests = [
             }
         });
     }],
+    ["read collection via condition on index with a range and filter function", function () {
+        var theaterToClean = new Theater();
+        theaterToClean.fetch({
+            success: function () {
+                deleteNext(theaterToClean.models, function () {
+                    addAllMovies(null, function () {
+                        // Now all movies are inserted. Which is good.
+                        var theater = new Theater();
+                        theater.fetch({
+                            conditions: {
+                                format: ["a", "f"]
+                            },
+                            filter: function (movie) {
+                                return movie && movie.title && movie.title.charAt(0) === 'H';
+                            }
+                        }).done(function () {
+                            start();
+                            equal(theater.models.length, 2, "Should have 2 elements");
+                            deepEqual(theater.pluck("title"), ["Hello", "Halo"], "Should have [\"Hello\", \"Halo\"]");
+                        }).always(function () {
+                            nextTest();
+                        });
+                    });
+                });
+            }
+        });
+    }],
+    ["read collection via sort index ascending", function () {
+        var theater = new Theater();
+        theater.fetch({
+            success: function () {
+                deleteNext(theater.models, function () {
+                    addAllMovies(null, function () {
+                        // Now all movies are inserted. Which is good.
+                        theater.fetch({
+                            sort: {
+                                index: "yearIndex"
+                            },
+                            success: function () {
+                                start();
+                                equal(theater.models.length, 5, "Should have 5 elements");
+                                deepEqual(theater.pluck("title"), ["Bonjour", "Nihao", "Hello", "Halo", "Ciao"], "Should have [\"Bonjour\", \"Nihao\", \"Hello\", \"Halo\", \"Ciao\"]");
+
+                                nextTest();
+                            }
+                        });
+                    });
+                });
+            }
+        });
+    }],
+    ["read collection via sort index descending", function () {
+        var theater = new Theater();
+        theater.fetch({
+            success: function () {
+                deleteNext(theater.models, function () {
+                    addAllMovies(null, function () {
+                        // Now all movies are inserted. Which is good.
+                        theater.fetch({
+                            sort: {
+                                index: "yearIndex",
+                                order: -1
+                            }
+                        }).done(function () {
+                            start();
+                            equal(theater.models.length, 5, "Should have 5 elements");
+                            deepEqual(theater.pluck("title"), ["Ciao", "Halo", "Hello", "Nihao", "Bonjour"], "Should have [\"Ciao\", \"Halo\", \"Hello\", \"Nihao\", \"Bonjour\"]");
+                        }).always(function () {
+                            nextTest();
+                        });
+                    });
+                });
+            }
+        });
+    }],
+    ["read collection via sort index descending with filter function", function () {
+        var theater = new Theater();
+        theater.fetch({
+            success: function () {
+                deleteNext(theater.models, function () {
+                    addAllMovies(null, function () {
+                        // Now all movies are inserted. Which is good.
+                        theater.fetch({
+                            sort: {
+                                index: "yearIndex",
+                                order: -1
+                            },
+                            filter: function (movie) {
+                                return movie && movie.title && movie.title.indexOf("a") !== -1;
+                            }
+                        }).done(function () {
+                            start();
+                            equal(theater.models.length, 3, "Should have 3 elements");
+                            deepEqual(theater.pluck("title"), ["Ciao", "Halo", "Nihao"], "Should have [\"Ciao\", \"Halo\", \"Nihao\"]");
+                        }).always(function () {
+                            nextTest();
+                        });
+                    });
+                });
+            }
+        });
+    }],
     ["read collection via condition on index with a range and a limit", function () {
         var theaterToClean = new Theater();
         theaterToClean.fetch({
@@ -894,6 +996,30 @@ var tests = [
                 equal(collection.length, ++counter);
             });
             theater.fetch({ addIndividually: true }).always(nextTest);
+        });
+    }],
+    ["support for the 'abort' function", function () {
+        var counter = 0,
+            promise,
+            theater = new Theater();
+
+        addAllMovies(null, function () {
+            expect(5);
+            start();
+            theater.bind('add', function () {
+                counter += 1;
+                equal(!!promise, true, "Should return a promise");
+                equal(!!promise.abort, true, "Returned promise should have an abort function");
+                if (counter === 2) {
+                    promise.abort();
+                }
+            });
+            promise = theater.fetch({
+                addIndividually: true
+            }).always(function () {
+                equal(theater.models.length, 2, "Should have 2 elements");
+                nextTest();
+            });
         });
     }],
     ["support for model specific sync override", function(){
