@@ -25,6 +25,8 @@
 
     if ( _(indexedDB).isUndefined() ) { return; }
     
+    var Deferred = Backbone.$ && Backbone.$.Deferred;
+
     // Driver object
     // That's the interesting part.
     // There is a driver for each schema provided. The schema is a te combination of name (for the database), a version as well as migrations to reach that
@@ -568,7 +570,7 @@
             });
             // Clean up active databases object.
             Databases = {};
-            return Backbone.$.Deferred().resolve();
+            return Deferred && Deferred().resolve();
         }
 
         // If a model or a collection does not define a database, fall back on ajaxSync
@@ -585,8 +587,8 @@
         }
 
         var dfd, promise;
-        if (typeof $ != 'undefined' && $.Deferred) {
-            dfd = $.Deferred();
+        if (Deferred) {
+            dfd = Deferred();
             promise = dfd.promise();
             promise.abort = function () {
                 options.abort = true;
