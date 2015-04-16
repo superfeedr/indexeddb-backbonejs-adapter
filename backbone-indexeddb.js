@@ -23,7 +23,7 @@
         return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
     }
 
-    if ( _(indexedDB).isUndefined() ) { return; }
+    if ( _(window.indexedDB).isUndefined() ) { return; }
     
     var Deferred = Backbone.$ && Backbone.$.Deferred;
 
