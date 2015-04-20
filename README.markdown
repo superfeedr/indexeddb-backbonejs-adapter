@@ -72,7 +72,7 @@ var database = {
 		}, {
 			version: "1.1",
 			migrate: function(transaction, next) {
-				var store = transaction.db.objectStore("movies")
+				var store = transaction.objectStore("movies")
 				store.createIndex("titleIndex", "title", { unique: true});  // Adds an index on the movies titles
 				store.createIndex("formatIndex", "format", { unique: false}); // Adds an index on the movies formats
 				store.createIndex("genreIndex", "genre", { unique: false}); // Adds an index on the movies genres
