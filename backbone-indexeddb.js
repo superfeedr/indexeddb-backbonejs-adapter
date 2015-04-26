@@ -192,7 +192,7 @@
 
         // This is the main method, called by the ExecutionQueue when the driver is ready (database open and migration performed)
         execute: function (storeName, method, object, options) {
-            if (!this.nolog) debugLog("execute : " + method +  " on " + storeName + " for " + object.id);
+            if (!this.nolog) debugLog("execute : " + method +  " on " + storeName + " for " + (object.id || object.cid || "collection"));
             switch (method) {
             case "create":
                 this.create(storeName, object, options);
