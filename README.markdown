@@ -60,7 +60,7 @@ var database = {
 	description: "The database for the Movies",
 	migrations : [
 		{
-			version: "1.0",
+			version: 1,
 			before: function(next) {
 			    // Do magic stuff before the migration. For example, before adding indices, the Chrome implementation requires to set define a value for each of the objects.
 			    next();
@@ -70,7 +70,7 @@ var database = {
 				next();
 			}
 		}, {
-			version: "1.1",
+			version: 2,
 			migrate: function(transaction, next) {
 				var store = transaction.db.objectStore("movies")
 				store.createIndex("titleIndex", "title", { unique: true});  // Adds an index on the movies titles
